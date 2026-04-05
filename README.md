@@ -2,6 +2,33 @@
 
 基于九维度安全框架，对企业级 AI 工具和传统安全工具进行深度安全评估，生成可视化 HTML 报告和高清截图。
 
+## 前端展示
+
+### 评估入口页面
+
+![TrustLens Landing Page](screenshots/frontend_hero.png)
+
+用户输入 AI 工具名称、行业信息后，平台自动爬取官方文档并进行九维度安全评估。
+
+### 评估结果 — 汇总对比
+
+![Summary Report](screenshots/frontend_summary.png)
+
+多工具横向对比雷达图、评分排行、分类对比、风险总览，一目了然。
+
+### 评估结果 — 详细报告
+
+![Detail Report](screenshots/frontend_detail_report.png)
+
+每个工具生成独立详细报告，包含：
+- 执行摘要（优缺点一目了然）
+- 九维度雷达图（SVG）
+- 逐项评分（含进度条和百分比）
+- 文档证据引用
+- 风险清单（高/中/低分级）
+- 补偿控制建议
+- 一票否决检查
+
 ## 评估框架
 
 9 个安全维度，满分 100 分（加权计算）：
@@ -20,46 +47,30 @@
 
 ## 已评估工具
 
-### 传统安全工具
-- **CrowdStrike Falcon** (EDR/XDR)
-- **SentinelOne** (EDR/XDR)
-- **Okta Workforce Identity** (IAM)
-- **Microsoft Entra ID** (IAM)
-- **Zscaler Internet Access** (云安全)
-- **Fortinet FortiGate** (NGFW)
-
-### AI Coding 工具
-- **GitHub Copilot Enterprise**
-- **Cursor**
-- **Windsurf (Codeium)**
-
-## 项目结构
-
-```
-trustlens/
-├── lib/
-│   ├── scorer.js            # 评分引擎（九维度定义、权重、计算）
-│   ├── detailed_reporter.js # 详细报告生成器（含雷达图 SVG）
-│   └── reporter.js          # 汇总报告生成器
-├── data.js                  # 前端数据层
-├── app.js                   # Web 应用主逻辑
-├── cli.js                   # CLI 入口
-├── styles.css               # 全局样式
-├── index.html               # Web 前端
-├── tools_list.yaml          # 工具配置（名称 + 文档 URL）
-├── generate_reports.mjs     # 报告批量生成脚本
-├── inject_exec_summary.mjs  # 执行摘要注入脚本
-├── screenshot_reports.mjs   # Puppeteer 截图导出脚本
-├── *_analysis.json          # 各工具原始分析数据
-├── report_*.html            # 生成的 HTML 评估报告
-└── package.json
-```
+| 工具 | 类别 | 得分 | 等级 |
+|------|------|------|------|
+| Fortinet FortiGate | 云安全 | 94.3 | A+ |
+| Microsoft Entra ID | IAM | 86.3 | A |
+| Okta Workforce Identity | IAM | 76.9 | B |
+| Zscaler Internet Access | 云安全 | 74.4 | B |
+| SentinelOne | EDR/XDR | 73.5 | B |
+| CrowdStrike Falcon | EDR/XDR | 71.2 | B |
+| GitHub Copilot Enterprise | AI Coding | 68.0 | B |
+| Cursor | AI Coding | 58.4 | C |
+| Windsurf (Codeium) | AI Coding | 58.4 | C |
 
 ## 快速开始
 
 ```bash
 # 安装依赖
 npm install
+
+# 启动 Web 前端
+node app.js
+# 打开 http://localhost:3000
+
+# 命令行评估
+node cli.js --tool "Cursor" --industry tech
 
 # 生成所有报告（从 JSON 数据）
 node generate_reports.mjs
@@ -71,18 +82,25 @@ node inject_exec_summary.mjs
 node screenshot_reports.mjs
 ```
 
-## 报告输出
+## 项目结构
 
-每个工具生成独立的 HTML 报告，包含：
-- 执行摘要（优缺点一目了然）
-- 九维度雷达图（SVG）
-- 逐项评分（含进度条和百分比）
-- 文档证据引用
-- 风险清单（高/中/低分级）
-- 补偿控制建议
-- 一票否决检查
-
-另有汇总对比报告（`report_summary.html`），包含多工具雷达图叠加和分类对比。
+```
+trustlens/
+├── index.html              # Web 前端入口
+├── app.js                  # Express 后端服务
+├── cli.js                  # CLI 命令行工具
+├── styles.css              # 全局样式
+├── tools_list.yaml         # 工具列表配置
+├── lib/
+│   ├── scorer.js           # 九维度评分引擎
+│   ├── analyzer.js         # 文档分析器
+│   ├── crawler.js          # 文档爬虫
+│   ├── reporter.js         # 基础报告生成
+│   └── detailed_reporter.js # 详细报告生成（含雷达图）
+├── report_*.html           # 生成的评估报告
+├── screenshots/            # 高清 PNG 截图
+└── *_analysis.json         # 原始分析数据
+```
 
 ## License
 
