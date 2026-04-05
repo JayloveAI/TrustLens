@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrustLens — 企业级 AI 工具可信安全评估平台</title>
+  <meta name="description" content="15分钟内生成可提交给 CISO 的 AI 工具企业可信度评估报告" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ─── SCREEN 1: LANDING ─────────────────────────────────── -->
+<div id="screen-landing" class="screen active">
+  <nav class="nav">
+    <div class="nav-logo">
+      <span class="logo-icon">🔍</span>
+      <span class="logo-text">TrustLens</span>
+      <span class="logo-badge">BETA</span>
+    </div>
+    <div class="nav-links">
+      <a href="#" class="nav-link" onclick="openFrameworkDoc();return false">框架文档</a>
+      <a href="#" class="nav-link" onclick="showBenchmark();return false">基准数据库</a>
+      <button class="btn-ghost" onclick="loadDemo()">查看示例报告</button>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-badge"><span class="pulse-dot"></span>基于 Claude Code 逆向工程验证</div>
+    <h1 class="hero-title">
+      在引入 AI 工具之前<br/>
+      <span class="gradient-text">先看穿它的安全底线</span>
+    </h1>
+    <p class="hero-sub">
+      9 大企业安全维度 · 39 项自动化检测 · 15 分钟生成 CISO 级评估报告<br/>
+      不再依赖供应商的 PDF 认证——用代码证据说话
+    </p>
+
+    <div class="eval-card">
+      <div class="eval-card-header">
+        <h2>🚀 开始评估</h2>
+        <p>输入待评估的 AI 工具信息</p>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>AI 工具名称 <span class="req">*</span></label>
+          <input id="tool-name" type="text" placeholder="例如: Claude Code、Cursor、GitHub Copilot" />
+        </div>
+        <div class="form-group">
+          <label>版本号</label>
+          <input id="tool-version" type="text" placeholder="例如: 1.0.0 或 latest" />
+        </div>
+        <div class="form-group full">
+          <label>官方文档 / 安全白皮书 URL（可选）</label>
+          <input id="tool-url" type="url" placeholder="https://..." />
+        </div>
+        <div class="form-group">
+          <label>所在行业</label>
+          <select id="industry">
+            <option value="tech">互联网 / 科技</option>
+            <option value="finance">金融 / 银行</option>
+            <option value="healthcare">医疗 / 生命科学</option>
+            <option value="gov">政府 / 军工</option>
+            <option value="startup">初创企业</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>评估模式</label>
+          <select id="eval-mode" onchange="updateModeHint()">
+            <option value="quick">⚡ 快速评估（问卷为主，~5分钟）</option>
+            <option value="standard" selected>📋 标准评估（文档 + 模拟探测，~15分钟）</option>
+            <option value="deep">🔬 深度评估（沙箱 + 流量 + 攻击测试，~45分钟）</option>
+          </select>
+        </div>
+      </div>
+      <div id="mode-hint" class="mode-hint">
+        <div class="mode-compare">
+          <div class="mode-col" id="mh-quick"><div class="mc-title">⚡ 快速</div><div class="mc-dims">3 / 9 维度</div><div class="mc-conf">可信度 60%</div><div class="mc-method">问卷自述</div></div>
+          <div class="mode-col active" id="mh-standard"><div class="mc-title">📋 标准</div><div class="mc-dims">9 / 9 维度</div><div class="mc-conf">可信度 80%</div><div class="mc-method">文档 + 探测</div></div>
+          <div class="mode-col" id="mh-deep"><div class="mc-title">🔬 深度</div><div class="mc-dims">9 / 9 维度</div><div class="mc-conf">可信度 95%</div><div class="mc-method">沙箱实测</div></div>
+        </div>
+      </div>
+      <button class="btn-primary btn-large" onclick="startEvaluation()">
+        <span>开始评估</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+      <div class="demo-link">
+        或者 <a href="#" onclick="loadDemo();return false">直接查看 Claude Code 评估示例 →</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="dimensions-preview">
+    <h2 class="section-title">九大评估维度</h2>
+    <p class="section-sub">每个维度均有来自 Claude Code 源代码的实践参照，确保评估标准具有真实的技术依据</p>
+    <div class="dim-grid">
+      <div class="dim-card" style="--accent:#6366f1">
+        <div class="dim-icon">🔐</div>
+        <div class="dim-name">D1 身份认证</div>
+        <div class="dim-weight">权重 15%</div>
+      </div>
+      <div class="dim-card" style="--accent:#10b981">
+        <div class="dim-icon">🛡️</div>
+        <div class="dim-name">D2 权限控制</div>
+        <div class="dim-weight">权重 20%</div>
+      </div>
+      <div class="dim-card" style="--accent:#f59e0b">
+        <div class="dim-icon">🌐</div>
+        <div class="dim-name">D3 数据主权</div>
+        <div class="dim-weight">权重 18%</div>
+      </div>
+      <div class="dim-card" style="--accent:#3b82f6">
+        <div class="dim-icon">📋</div>
+        <div class="dim-name">D4 审计追溯</div>
+        <div class="dim-weight">权重 15%</div>
+      </div>
+      <div class="dim-card" style="--accent:#ef4444">
+        <div class="dim-icon">🧠</div>
+        <div class="dim-name">D5 注入防御</div>
+        <div class="dim-weight">权重 12%</div>
+      </div>
+      <div class="dim-card" style="--accent:#8b5cf6">
+        <div class="dim-icon">🔌</div>
+        <div class="dim-name">D6 扩展安全</div>
+        <div class="dim-weight">权重 8%</div>
+      </div>
+      <div class="dim-card" style="--accent:#06b6d4">
+        <div class="dim-icon">⚙️</div>
+        <div class="dim-name">D7 配置治理</div>
+        <div class="dim-weight">权重 6%</div>
+      </div>
+      <div class="dim-card" style="--accent:#84cc16">
+        <div class="dim-icon">💰</div>
+        <div class="dim-name">D8 成本控制</div>
+        <div class="dim-weight">权重 4%</div>
+      </div>
+      <div class="dim-card" style="--accent:#f43f5e">
+        <div class="dim-icon">📜</div>
+        <div class="dim-name">D9 合规对齐</div>
+        <div class="dim-weight">权重 2%</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ─── SCREEN 2: SCANNING ──────────────────────────────────── -->
+<div id="screen-scanning" class="screen">
+  <div class="scanning-wrapper">
+    <div class="scanning-orb">
+      <div class="orb-ring r1"></div>
+      <div class="orb-ring r2"></div>
+      <div class="orb-ring r3"></div>
+      <div class="orb-core">🔍</div>
+    </div>
+    <h2 class="scanning-title">正在评估 <span id="scanning-tool-name">—</span></h2>
+    <div class="scanning-progress-wrap">
+      <div class="scanning-progress-bar"><div id="scan-bar" class="scan-fill"></div></div>
+      <span id="scan-pct">0%</span>
+    </div>
+    <div id="scan-log" class="scan-log"></div>
+  </div>
+</div>
+
+<!-- ─── SCREEN 4: BENCHMARK ──────────────────────────────────── -->
+<div id="screen-benchmark" class="screen">
+  <nav class="nav">
+    <div class="nav-logo">
+      <span class="logo-icon">🔍</span>
+      <span class="logo-text">TrustLens</span>
+      <span class="logo-badge">BENCHMARK</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-ghost" onclick="showScreen('screen-landing')">← 返回首页</button>
+    </div>
+  </nav>
+
+  <section class="bench-section">
+    <h1 class="bench-title">AI 工具安全基准对比</h1>
+    <p class="bench-sub">基于 TrustLens 九维度框架，横向对比主流 AI Coding 工具的企业可信安全水平</p>
+
+    <div class="bench-industry-bar">
+      <label>行业基准线：</label>
+      <select id="bench-industry" onchange="renderBenchmark()">
+        <option value="tech">互联网 / 科技 (70分)</option>
+        <option value="finance" selected>金融 / 银行 (85分)</option>
+        <option value="healthcare">医疗 / 生命科学 (80分)</option>
+        <option value="gov">政府 / 军工 (90分)</option>
+        <option value="startup">初创企业 (60分)</option>
+      </select>
+    </div>
+
+    <div class="bench-tool-selector" id="bench-tool-selector">
+      <label>对比工具：</label>
+      <div class="bts-options">
+        <label class="bts-chip active" data-key="claude-code">
+          <input type="checkbox" checked onchange="updateBenchSelection()"> Claude Code
+        </label>
+        <label class="bts-chip active" data-key="github-copilot">
+          <input type="checkbox" checked onchange="updateBenchSelection()"> GitHub Copilot
+        </label>
+        <label class="bts-chip active" data-key="cursor">
+          <input type="checkbox" checked onchange="updateBenchSelection()"> Cursor
+        </label>
+        <label class="bts-chip active" data-key="windsurf">
+          <input type="checkbox" checked onchange="updateBenchSelection()"> Windsurf
+        </label>
+      </div>
+    </div>
+
+    <!-- Tool Cards -->
+    <div id="bench-cards" class="bench-cards"></div>
+
+    <!-- Comparison Chart -->
+    <div class="card bench-chart-card">
+      <h3 class="card-title">九维度横向对比</h3>
+      <div class="bench-chart-wrap">
+        <canvas id="benchChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Dimension Comparison Table -->
+    <div class="card bench-table-card">
+      <h3 class="card-title">维度评分明细对比</h3>
+      <div class="bench-table-wrap">
+        <table id="bench-table" class="bench-table"></table>
+      </div>
+    </div>
+
+    <!-- Radar Overlay Chart -->
+    <div class="card bench-chart-card">
+      <h3 class="card-title">九维度雷达叠加对比</h3>
+      <div class="bench-radar-wrap">
+        <canvas id="benchRadarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Strengths / Weaknesses Summary -->
+    <div id="bench-summary" class="bench-summary"></div>
+  </section>
+</div>
+
+<!-- ─── SCREEN 3: RESULTS ────────────────────────────────────── -->
+<div id="screen-results" class="screen">
+
+  <nav class="nav nav-results">
+    <div class="nav-logo">
+      <span class="logo-icon">🔍</span>
+      <span class="logo-text">TrustLens</span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn-ghost" onclick="showScreen('screen-landing')">← 新建评估</button>
+      <button class="btn-primary" onclick="generateReport()">📄 生成 CISO 报告</button>
+    </div>
+  </nav>
+
+  <!-- Hero Score -->
+  <div class="results-hero">
+    <div class="results-meta">
+      <div class="meta-tool">
+        <span id="r-tool-name">—</span>
+        <span id="r-tool-version" class="tool-version"></span>
+      </div>
+      <div class="meta-date">评估时间：<span id="r-eval-date">—</span></div>
+    </div>
+    <div class="score-display">
+      <div class="score-ring-wrap">
+        <svg class="score-ring" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52" />
+          <circle id="ring-fill" class="ring-fill" cx="60" cy="60" r="52"
+            stroke-dasharray="326.7" stroke-dashoffset="326.7" />
+        </svg>
+        <div class="score-number-wrap">
+          <span id="r-score" class="score-number">—</span>
+          <span class="score-max">/100</span>
+        </div>
+      </div>
+      <div class="score-info">
+        <div id="r-grade" class="grade-badge">—</div>
+        <div id="r-verdict" class="verdict-text">—</div>
+        <div id="r-industry-gap" class="industry-gap"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Veto Check -->
+  <div id="veto-panel" class="veto-panel"></div>
+
+  <!-- Main Grid -->
+  <div class="results-grid">
+
+    <!-- Radar Chart -->
+    <div class="card card-radar">
+      <h3 class="card-title">安全能力雷达图</h3>
+      <div class="radar-wrap">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Dimension Cards -->
+    <div class="card card-dims">
+      <h3 class="card-title">维度评分明细</h3>
+      <div id="dim-list" class="dim-list"></div>
+    </div>
+
+    <!-- Risk Summary -->
+    <div class="card card-risks">
+      <h3 class="card-title">⚠️ 关键风险</h3>
+      <div id="risk-list" class="risk-list"></div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="card card-recs">
+      <h3 class="card-title">💡 补偿控制建议</h3>
+      <div id="rec-list" class="rec-list"></div>
+    </div>
+
+  </div>
+
+  <!-- Detail Modal -->
+  <div id="detail-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal()"></div>
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 id="modal-title"></h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-body" class="modal-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── REPORT MODAL ─────────────────────────────────────────── -->
+<div id="report-modal" class="modal hidden">
+  <div class="modal-overlay" onclick="closeReport()"></div>
+  <div class="modal-box modal-report">
+    <div class="modal-header">
+      <h2>📄 CISO 评估报告</h2>
+      <div class="report-actions">
+        <button class="btn-ghost" onclick="copyReport()">📋 复制</button>
+        <button class="btn-primary" onclick="printReport()">🖨️ 打印 / PDF</button>
+        <button class="modal-close" onclick="closeReport()">✕</button>
+      </div>
+    </div>
+    <div id="report-content" class="report-content"></div>
+  </div>
+</div>
+
+<!-- ─── FRAMEWORK DOC MODAL ──────────────────────────────── -->
+<div id="doc-modal" class="modal hidden">
+  <div class="modal-overlay" onclick="closeDocModal()"></div>
+  <div class="modal-box modal-doc">
+    <div class="modal-header">
+      <h2>📖 TrustLens 评估框架文档</h2>
+      <button class="modal-close" onclick="closeDocModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- URL 输入区 -->
+      <div class="doc-url-section">
+        <label class="doc-label">📎 提供外部文档链接</label>
+        <div class="doc-url-row">
+          <input id="doc-url-input" type="url" placeholder="https://your-company.com/security-policy.pdf" />
+          <button class="btn-primary" onclick="openExternalDoc()">打开 ↗</button>
+        </div>
+        <p class="doc-hint">输入待评估工具的官方安全白皮书、合规认证文档等外部链接</p>
+      </div>
+
+      <div class="doc-divider"><span>或查阅内置框架</span></div>
+
+      <!-- 内置文档区 -->
+      <div class="doc-builtin">
+        <div class="doc-toc">
+          <h3>TrustLens 九维度评估框架</h3>
+          <p class="doc-intro">本框架基于 Claude Code 逆向工程实证，从真实代码中提炼企业 AI 工具安全评估标准。</p>
+        </div>
+
+        <div class="doc-dims-grid" id="doc-dims-grid">
+          <!-- JS 动态生成 9 个维度摘要卡片 -->
+        </div>
+
+        <div class="doc-scoring">
+          <h4>评分体系</h4>
+          <table class="doc-table">
+            <thead><tr><th>等级</th><th>分数</th><th>结论</th></tr></thead>
+            <tbody>
+              <tr><td class="grade-A-plus">A+</td><td>90-100</td><td>企业级可信，推荐引入</td></tr>
+              <tr><td class="grade-A">A</td><td>80-89</td><td>可引入，需监控特定风险</td></tr>
+              <tr><td class="grade-B">B</td><td>65-79</td><td>有条件引入，需补偿控制</td></tr>
+              <tr><td class="grade-C">C</td><td>50-64</td><td>高风险，不建议引入</td></tr>
+              <tr><td class="grade-D">D</td><td>0-49</td><td>不适合企业使用</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="doc-veto">
+          <h4>一票否决条款（任一触发→强制降级至D）</h4>
+          <ul>
+            <li>☐ 无任何身份认证机制</li>
+            <li>☐ 无法禁止文件系统写操作</li>
+            <li>☐ 代码数据发送至境外且无代理拦截</li>
+            <li>☐ 无任何操作日志</li>
+            <li>☐ Prompt Injection 测试中 AI 执行恶意指令</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

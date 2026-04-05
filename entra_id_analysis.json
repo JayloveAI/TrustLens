@@ -1,0 +1,201 @@
+{
+  "toolName": "Microsoft Entra ID",
+  "category": "iam",
+  "tagline": "Microsoft's cloud identity and access management service providing MFA, Conditional Access, RBAC, and governance for enterprise environments",
+  "dimScores": {
+    "D1": {
+      "score": 9.4,
+      "checks": [1.0, 0.95, 1.0, 0.95, 0.9, 1.0, 0.95, 0.9],
+      "evidence": "Microsoft Entra ID provides comprehensive authentication including OAuth2/OIDC token-based auth, 13+ MFA verification methods (Microsoft Authenticator, FIDO2 passkeys, Windows Hello for Business, certificate-based auth, hardware tokens, SMS, voice), Conditional Access policies enforcing context-aware access decisions based on user risk, sign-in risk, device state, location, and client app type. Supports passwordless authentication via FIDO2 keys and Windows Hello. Legacy authentication protocols can be blocked via Conditional Access. Security defaults enable MFA for all users out-of-the-box. Authentication methods policy provides centralized management with migration from legacy MFA/SSPR policies. Identity Protection detects and remediates identity-based risks with real-time sign-in risk evaluation. Sources: learn.microsoft.com/en-us/entra/identity/authentication/concept-mfa-howitworks, learn.microsoft.com/en-us/entra/identity/conditional-access/, learn.microsoft.com/en-us/azure/active-directory/conditional-access/concept-conditional-access-conditions",
+      "missing": [
+        "Native FIDO2 passkey support requires Entra ID P1/P2 for Conditional Access integration",
+        "Some legacy protocol support (Exchange ActiveSync) limits MFA enforcement in edge cases"
+      ]
+    },
+    "D2": {
+      "score": 9.2,
+      "checks": [0.95, 0.95, 0.9, 0.95, 0.9, 0.95, 0.95, 0.85],
+      "evidence": "Entra ID provides robust least-privilege enforcement through: (1) Microsoft Entra RBAC with built-in roles, custom roles, and least-privileged roles by task; (2) Privileged Identity Management (PIM) enabling just-in-time privileged access with time-bound role activation, approval workflows, and multi-factor activation requirements; (3) Administrative Units for scoping role assignments to subsets of users/groups; (4) Role-assignable groups for delegated role management; (5) Access Reviews for periodic recertification of role memberships and access assignments; (6) Entitlement Management for governing access packages with built-in approval workflows. PIM limits standing admin access, requires justification for activation, and provides full audit trail. Sources: learn.microsoft.com/en-us/entra/identity/role-based-access-control/, learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management, learn.microsoft.com/en-us/entra/id-governance/",
+      "missing": [
+        "PIM requires Entra ID P2 license for full functionality",
+        "Some granular custom role permissions may require careful design to avoid over-provisioning"
+      ]
+    },
+    "D3": {
+      "score": 8.4,
+      "checks": [0.9, 0.85, 0.8, 0.85, 0.9, 0.85, 0.85, 0.8],
+      "evidence": "Entra ID provides extensive visibility into data flows through: (1) Sign-in logs capturing all authentication events with detailed risk, location, device, and client app information; (2) Audit logs tracking all directory changes (users, groups, apps, licenses, role assignments) with immutable entries; (3) Provisioning logs for identity synchronization activities across connected systems (Workday, ServiceNow, etc.); (4) Microsoft Graph activity logs (P1/P2); (5) Diagnostic settings for exporting logs to Log Analytics, Event Hubs, or Storage accounts; (6) Cross-tenant access settings for controlling B2B collaboration data flows; (7) Hybrid identity support via Azure AD Connect for on-premises synchronization. Sources: learn.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-audit-logs, learn.microsoft.com/en-us/entra/identity/, learn.microsoft.com/en-us/entra/external-id/",
+      "missing": [
+        "Full data flow visualization across multi-cloud environments requires integration with Microsoft Sentinel",
+        "Provisioning logs require P1/P2 license"
+      ]
+    },
+    "D4": {
+      "score": 9.0,
+      "checks": [0.95, 0.95, 0.9, 0.9, 0.9, 0.85, 0.95, 0.85],
+      "evidence": "Entra ID provides comprehensive audit capabilities: (1) Audit logs are immutable, system-generated, and cannot be changed or deleted; (2) Logs capture all directory-level activities including user/group/app changes, role assignments, license modifications; (3) Custom security attribute audit logs with dedicated Attribute Log Administrator/Reader roles; (4) Sign-in logs with risk detection, Conditional Access evaluation details, and authentication method tracking; (5) Role-based access to logs (Reports Reader, Security Reader, Security Administrator, Global Reader); (6) Integration with Log Analytics, Event Hubs, and SIEM solutions for long-term retention and analysis; (7) Identity Protection risk investigation with simulation capabilities; (8) Lifecycle Workflows for auditable joiner-mover-leaver processes. Sources: learn.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-audit-logs, learn.microsoft.com/en-us/entra/id-protection/, learn.microsoft.com/en-us/entra/id-governance/",
+      "missing": [
+        "Advanced analytics and threat hunting require integration with Microsoft Sentinel",
+        "Long-term log retention beyond 30 days requires diagnostic settings configuration"
+      ]
+    },
+    "D5": {
+      "score": 3.5,
+      "checks": [0.3, 0.2, 0.3, 0.5, 0.4, 0.6, 0.4, 0.5],
+      "evidence": "Microsoft Entra ID is not an AI/LLM tool and does not process natural language prompts in a way susceptible to prompt injection. The prompt injection dimension is largely not applicable to Entra ID as an IAM service. However, some considerations exist: (1) Conditional Access optimization agent (preview) uses AI for policy recommendations but operates on structured policy data, not free-text prompts; (2) Authentication methods and policies are defined through structured admin interfaces, not natural language; (3) User-facing interactions (sign-in, MFA challenges) use fixed UI patterns not susceptible to injection; (4) Microsoft Graph API calls use structured query parameters. The score reflects that while Entra ID itself has minimal prompt injection surface, it increasingly incorporates AI features (optimization agent) that warrant monitoring. Sources: learn.microsoft.com/en-us/entra/identity/conditional-access/",
+      "missing": [
+        "No LLM prompt handling surface to defend against",
+        "AI-powered Conditional Access optimization agent needs prompt injection review as it matures",
+        "No input sanitization frameworks needed for traditional IAM operations"
+      ]
+    },
+    "D6": {
+      "score": 7.0,
+      "checks": [0.7, 0.75, 0.7, 0.7, 0.7, 0.7],
+      "evidence": "Entra ID integrates with a broad plugin/extension ecosystem: (1) Enterprise applications via SAML/OIDC federation with thousands of pre-integrated apps in the Azure AD app gallery; (2) API connectors for custom authentication extensions; (3) External authentication methods (preview) allowing third-party MFA providers; (4) NPS extension for integrating with on-premises RADIUS infrastructure; (5) Application Proxy for secure remote access to on-premises web applications; (6) Microsoft Graph API for programmatic management. Plugin security is enforced through app registration/consent frameworks, permission scopes (delegated vs application), Conditional Access policies applying to all integrated apps, and admin consent workflows for high-privilege permissions. Sources: learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-methods-manage, learn.microsoft.com/en-us/entra/identity/",
+      "missing": [
+        "Third-party app consent model can be exploited if admin consent is too permissive",
+        "External authentication methods are in preview and lack maturity documentation",
+        "Granular plugin permission auditing requires additional tooling"
+      ]
+    },
+    "D7": {
+      "score": 9.3,
+      "checks": [0.95, 0.95, 0.9, 0.95, 0.9, 0.95],
+      "evidence": "Entra ID excels at configuration governance through: (1) Conditional Access policies with granular conditions (user risk, sign-in risk, device platform, location, client apps, device filters) providing fine-grained access control; (2) Named locations for geo-fencing access; (3) Authentication Strengths for requiring specific MFA methods per scenario; (4) Security defaults as baseline protection for all tenants; (5) What If tool for testing policy impact before deployment; (6) Conditional Access optimization agent for policy recommendations; (7) Device compliance integration with Microsoft Intune for requiring managed/compliant devices; (8) Configuration drift prevention through policy-only management model. Intune integration enables device-level governance. Policies are versioned and changes are fully audited. Sources: learn.microsoft.com/en-us/entra/identity/conditional-access/, learn.microsoft.com/en-us/azure/active-directory/conditional-access/concept-conditional-access-conditions",
+      "missing": [
+        "Conditional Access policy templates could benefit from more industry-specific presets",
+        "Policy conflict detection across multiple Conditional Access policies requires manual review or What If tool"
+      ]
+    },
+    "D8": {
+      "score": 6.5,
+      "checks": [0.7, 0.65, 0.7, 0.65, 0.65, 0.7],
+      "evidence": "Entra ID cost management is licensing-tier dependent: (1) Free tier includes basic IAM, security defaults, and audit logs; (2) Entra ID P1 adds Conditional Access, dynamic groups, self-service password reset, and hybrid identity; (3) Entra ID P2 adds PIM, Identity Protection, Access Reviews, and Entitlement Management; (4) External ID has separate billing model for B2B/CIAM scenarios with monthly active user (MAU) pricing; (5) Authentication method licensing varies (FIDO2, certificate-based auth available in all tiers); (6) Cost allocation can be managed through Azure Cost Management for Entra ID governance features. The tiered model means advanced security features (PIM, Identity Protection, Access Reviews) require premium licensing, which can be expensive at scale. Sources: learn.microsoft.com/en-us/entra/external-id/, learn.microsoft.com/en-us/entra/id-governance/",
+      "missing": [
+        "No built-in spending alerts specific to Entra ID usage",
+        "P2 features critical for security (PIM, Identity Protection) create significant cost pressure",
+        "External ID MAU billing lacks real-time cost visibility"
+      ]
+    },
+    "D9": {
+      "score": 9.1,
+      "checks": [0.95, 0.95, 0.9, 0.9, 0.9, 0.9],
+      "evidence": "Microsoft Entra ID has extensive compliance coverage: (1) Microsoft Purview Compliance Manager provides 360+ regulatory templates for compliance assessments; (2) Compliance score tracks progress against ISO 27001, SOC 2, NIST, GDPR, HIPAA, FedRAMP, and many other frameworks; (3) Microsoft compliance offerings span national, regional, and industry-specific requirements; (4) Service assurance provides expertly curated compliance resources and documentation for risk assessments; (5) Immutable audit logs support compliance evidence collection; (6) Microsoft Cloud for Industries supports sector-specific compliance needs; (7) Audit log access supports Reports Reader, Security Reader, Security Administrator, and Global Reader roles following least-privilege principles. Microsoft undergoes regular third-party audits including SOC 1/2/3, ISO 27001/27018/27017, and FedRAMP. Sources: learn.microsoft.com/en-us/purview/compliance-manager, learn.microsoft.com/en-us/compliance/",
+      "missing": [
+        "Some regional compliance certifications may require additional Azure-level configurations",
+        "Customer-managed compliance actions require ongoing manual effort through Compliance Manager"
+      ]
+    }
+  },
+  "risks": [
+    {
+      "severity": "high",
+      "title": "Privileged Identity Management requires P2 licensing",
+      "dim": "D2",
+      "desc": "PIM, Access Reviews, and Identity Protection are only available with Entra ID P2 licenses. Organizations on Free or P1 tiers lack just-in-time privileged access controls, creating standing privilege risk."
+    },
+    {
+      "severity": "medium",
+      "title": "Conditional Access policy misconfiguration risk",
+      "dim": "D7",
+      "desc": "Complex Conditional Access policies with multiple conditions and overlapping assignments can produce unintended access outcomes. While the What If tool helps, there is no automated policy conflict detection."
+    },
+    {
+      "severity": "medium",
+      "title": "Third-party application consent exposure",
+      "dim": "D6",
+      "desc": "The OAuth consent framework allows users to grant permissions to third-party applications. Without strict admin consent policies, users may authorize malicious or over-privileged applications accessing directory data."
+    },
+    {
+      "severity": "medium",
+      "title": "Legacy authentication protocol risk",
+      "dim": "D1",
+      "desc": "While Conditional Access can block legacy authentication, Exchange ActiveSync and other legacy protocols do not support MFA. Organizations that still require legacy protocols face a security gap."
+    },
+    {
+      "severity": "low",
+      "title": "AI optimization agent preview status",
+      "dim": "D5",
+      "desc": "The Conditional Access optimization agent is in preview, and its AI-driven policy recommendations may evolve. Organizations should review agent suggestions before adoption to ensure alignment with security policies."
+    },
+    {
+      "severity": "low",
+      "title": "Cost escalation with premium features",
+      "dim": "D8",
+      "desc": "Critical security features including PIM, Identity Protection, and advanced Conditional Access require P2 licensing. At enterprise scale, per-user P2 costs can become significant, potentially leading organizations to deprioritize security controls."
+    }
+  ],
+  "recs": [
+    {
+      "dim": "D1",
+      "text": "Deploy FIDO2 passkeys and Windows Hello for Business to eliminate password-based attack vectors. Block legacy authentication protocols organization-wide using Conditional Access policies."
+    },
+    {
+      "dim": "D2",
+      "text": "Implement Privileged Identity Management (PIM) for all admin roles with maximum activation durations of 4-8 hours, require MFA for activation, and enforce approval workflows for Global Administrator and Privileged Role Administrator."
+    },
+    {
+      "dim": "D3",
+      "text": "Configure diagnostic settings to export all Entra ID logs (audit, sign-in, provisioning) to a Log Analytics workspace with at least 1 year retention. Integrate with Microsoft Sentinel for cross-correlation and threat hunting."
+    },
+    {
+      "dim": "D4",
+      "text": "Enable Continuous Access Evaluation (CAE) for near-real-time token revocation. Configure alert rules for high-risk audit events such as role assignment changes, authentication method modifications, and Conditional Access policy updates."
+    },
+    {
+      "dim": "D5",
+      "text": "As Entra ID incorporates more AI features (optimization agent, Copilot integration), establish a review process for AI-generated policy recommendations before deployment. Monitor the AI feature roadmap for new prompt-handling surfaces."
+    },
+    {
+      "dim": "D6",
+      "text": "Configure admin consent policies to restrict user self-service app consent. Enable admin consent workflow for applications requesting high-privilege permissions. Regularly audit enterprise application consent grants and remove unused applications."
+    },
+    {
+      "dim": "D7",
+      "text": "Adopt Conditional Access templates for common security scenarios (require MFA for admins, block legacy auth, require compliant device). Use the What If tool to test all new policies before enabling them in report-only mode, then transition to enforce."
+    },
+    {
+      "dim": "D8",
+      "text": "Conduct a license optimization review to identify users who need P2 (admin roles, high-value targets) versus P1 (general Conditional Access). Use Entra ID Governance licensing fundamentals guide to optimize per-user costs."
+    },
+    {
+      "dim": "D9",
+      "text": "Use Microsoft Purview Compliance Manager to create assessments for ISO 27001, SOC 2, and industry-specific regulations applicable to your organization. Assign improvement actions to responsible teams and track compliance score progress."
+    }
+  ],
+  "vetoChecks": [
+    {
+      "pass": true,
+      "label": "Multi-factor authentication available and enforced via Conditional Access"
+    },
+    {
+      "pass": true,
+      "label": "Privileged Identity Management provides just-in-time admin access"
+    },
+    {
+      "pass": true,
+      "label": "Immutable audit logs with role-based access controls"
+    },
+    {
+      "pass": true,
+      "label": "Conditional Access enables context-aware policy enforcement"
+    },
+    {
+      "pass": true,
+      "label": "SOC 2, ISO 27001, and 360+ compliance framework certifications"
+    },
+    {
+      "pass": true,
+      "label": "RBAC with custom roles and administrative unit scoping"
+    },
+    {
+      "pass": true,
+      "label": "Identity Protection detects and remediates compromised identities"
+    },
+    {
+      "pass": false,
+      "label": "No prompt injection surface (N/A for IAM service, but AI features emerging)"
+    }
+  ]
+}

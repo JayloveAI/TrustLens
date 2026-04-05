@@ -1,0 +1,137 @@
+{
+  "toolName": "GitHub Copilot Enterprise",
+  "category": "ai_coding",
+  "tagline": "AI-powered coding assistant with enterprise-grade privacy, IP indemnification, and deep GitHub integration for code completion, chat, and autonomous agent capabilities",
+  "dimScores": {
+    "D1": {
+      "score": 4.2,
+      "checks": [0.9, 0.8, 0.9, 0.9, 1.0, 0.7, 0.8, 0.9],
+      "evidence": "GitHub Copilot Enterprise inherits GitHub's authentication framework: OAuth 2.0/OIDC for API access, personal access tokens (classic and fine-grained) with scope limitations. Token auto-renewal via GitHub App refresh tokens. Credentials stored encrypted, not plaintext. MFA enforcement available for GitHub organizations. Enterprise SSO via SAML 2.0 with major IdPs (Okta, Azure AD, OneLogin). Fine-grained PATs support repository-level scoping. GitHub Enterprise Cloud integrates with enterprise AD via SCIM provisioning. Bearer tokens over HTTPS only.",
+      "missing": ["Fine-grained PATs scoped to Copilot-specific operations not available", "Token auto-rotation period managed by GitHub, not configurable by customer"]
+    },
+    "D2": {
+      "score": 3.2,
+      "checks": [0.6, 0.3, 0.5, 0.5, 0.6, 0.4, 0.5, 0.8],
+      "evidence": "Copilot operates within IDE/editor context with limited permission granularity. Content filtering can block suggestions matching public code, but no multi-level permission model for file operations. No read-only mode for Copilot suggestions. File-level scope control via content exclusions (ignore specific files). Unknown code suggestions default to showing (not restricted). No confirmation mechanism for code suggestions before insertion. No sandbox — suggestions are generated remotely and displayed inline. No execution timeout (suggestions are non-executing). Admin policies can be centrally pushed via GitHub Enterprise settings.",
+      "missing": ["No multi-level permission model for code suggestions", "No read-only/preview mode for suggestions", "No sandbox for code suggestion evaluation", "No dangerous operation confirmation for code insertion"]
+    },
+    "D3": {
+      "score": 3.5,
+      "checks": [0.7, 0.5, 0.3, 0.5, 0.5, 0.2, 0.9, 0.8],
+      "evidence": "Copilot code snippets are sent to GitHub/Microsoft cloud for inference via HTTPS. Enterprise proxy support documented for IDE connections. Proxy settings configurable in VS Code/JetBrains extensions. No custom API endpoint for enterprise gateway routing. Enterprise CA certificate support limited. Telemetry collected on suggestion acceptance rates and usage patterns (can be disabled). No on-premises deployment — purely cloud SaaS. Enterprise plan explicitly states customer data is NOT used for model training. Data boundary clearly documented in Copilot Business Privacy Statement.",
+      "missing": ["No on-premises or hybrid deployment option", "No custom API endpoint for enterprise gateway", "Limited CA certificate replacement options", "Some telemetry collected by default (opt-out available)"]
+    },
+    "D4": {
+      "score": 3.4,
+      "checks": [0.6, 0.5, 0.8, 0.7, 0.7, 0.5, 0.5, 0.6],
+      "evidence": "GitHub audit log captures Copilot-related events (enable/disable, policy changes) at the organization level. Individual suggestion events are NOT logged for privacy reasons. Logs contain timestamps, actor, and action type. Audit logs auto-persisted in GitHub cloud. Copilot chat history exportable from IDE. Limited SIEM integration for Copilot-specific events — relies on GitHub audit log API. No log tamper-protection specific to Copilot events. Log retention follows GitHub's standard audit log policies (varies by plan).",
+      "missing": ["Individual code suggestions NOT logged (privacy by design)", "No Copilot-specific SIEM integration", "Limited audit granularity compared to AI coding agents", "Log retention period controlled by GitHub plan tier"]
+    },
+    "D5": {
+      "score": 2.8,
+      "checks": [0.4, 0.3, 0.5, 0.4, 0.2, 0.3, 0.3, 0.3],
+      "evidence": "Copilot does not have documented system-level prompt injection defenses for its suggestion engine. File content length limits exist implicitly via context window but no explicit configuration. User settings cannot override core Copilot behavior (no custom system prompt injection). No active warning mechanism for potentially malicious code suggestions. No PreToolUse hook mechanism — Copilot is a suggestion engine, not an agent. Injection scenario testing: Copilot may suggest vulnerable code from public repositories, partially mitigated by content filtering. Copilot Autocomplete can suggest code from malicious files open in the workspace.",
+      "missing": ["No documented prompt injection defense for suggestion engine", "No explicit file content length limits configurable by admin", "No PreToolUse hook mechanism", "Limited injection test scenario coverage"]
+    },
+    "D6": {
+      "score": 2.5,
+      "checks": [0.3, 0.5, 0.3, 0.4, 0.5, 0.5],
+      "evidence": "Copilot Extensions (third-party) introduced in 2024 allow external tools to integrate with Copilot Chat. Extensions run within GitHub's infrastructure, not in isolated processes. Admin can control which extensions are enabled via organization settings. No extension signing verification documented. Extensions use OAuth for authentication. Extensions inherit the user's Copilot permission scope. Admins can disable extensions at the org/enterprise level.",
+      "missing": ["Extensions not run in isolated processes", "No extension configuration signing", "Limited extension sandboxing", "Extension security model still maturing"]
+    },
+    "D7": {
+      "score": 3.8,
+      "checks": [0.7, 0.8, 0.6, 0.8, 0.6, 0.5],
+      "evidence": "Copilot policies configurable at organization and enterprise levels via GitHub admin console. Admin policies (content exclusions, suggestion filtering) cannot be overridden by individual users. Configuration supports org-level and enterprise-level scopes with inheritance. Admin console pushes settings to all Copilot users in the organization. GitHub audit log tracks Copilot policy changes with timestamps and actor. No environment variable override for Copilot settings.",
+      "missing": ["No project-level Copilot configuration (org-level only)", "Limited configuration inheritance depth", "No environment variable override", "Configuration versioning relies on GitHub audit log"]
+    },
+    "D8": {
+      "score": 3.5,
+      "checks": [0.7, 0.6, 0.5, 0.7, 0.6, 0.6],
+      "evidence": "GitHub shows Copilot usage metrics per organization (active users, suggestion acceptance rates). Per-seat licensing model with monthly billing visibility. Context window management handled by Copilot backend (automatic). Budget controls via seat-based licensing — admin can set maximum seats. Usage anomaly alerts available through GitHub admin dashboard. Per-team reporting available in Enterprise plan.",
+      "missing": ["No real-time token usage display for users", "No real-time cost estimation per project", "Budget controls limited to seat count, not usage-based", "Chargeback reporting limited to per-seat allocation"]
+    },
+    "D9": {
+      "score": 4.2,
+      "checks": [0.9, 1.0, 0.8, 0.7, 0.6, 0.9],
+      "evidence": "DPA available for GitHub Enterprise customers. SOC 2 Type II certified (GitHub/Microsoft). Data subject deletion rights supported via GitHub API and admin tools. Data residency limited — GitHub Enterprise Cloud data stored in US/EU. AI content attribution via GitHub's AI-generated content guidelines. Security incident notification defined in GitHub Enterprise SLA. Microsoft's broader compliance portfolio (ISO 27001, FedRAMP) applies. Copilot Trust Center provides transparency on data handling.",
+      "missing": ["AI content attribution not embedded in suggestions by default", "Data residency options limited to US/EU", "PIPL-specific compliance not explicitly documented for Copilot"]
+    }
+  },
+  "risks": [
+    {
+      "severity": "high",
+      "title": "Code snippets transmitted to cloud for inference",
+      "dim": "D3",
+      "desc": "Copilot sends code context (surrounding lines, open files) to GitHub/Microsoft cloud for generating suggestions. While Enterprise plan promises no training on customer data, the code is still transmitted to and temporarily processed in Microsoft's cloud infrastructure. This creates data exposure risk for organizations handling highly sensitive or classified code."
+    },
+    {
+      "severity": "high",
+      "title": "Limited prompt injection defense for suggestion engine",
+      "dim": "D5",
+      "desc": "Copilot's suggestion engine lacks documented defenses against prompt injection via malicious code in workspace files or dependencies. An attacker who compromises a dependency or injects malicious comments in code could potentially influence Copilot's suggestions to include vulnerable patterns."
+    },
+    {
+      "severity": "medium",
+      "title": "No on-premises deployment option",
+      "dim": "D3",
+      "desc": "Copilot is a purely cloud-based SaaS offering with no on-premises or hybrid deployment option. Organizations requiring air-gapped development environments or strict data sovereignty cannot use Copilot while maintaining their security posture."
+    },
+    {
+      "severity": "medium",
+      "title": "Limited audit granularity for code suggestions",
+      "dim": "D4",
+      "desc": "Individual Copilot code suggestions are NOT logged for privacy reasons. Organizations requiring full audit trails of all AI-generated code contributions cannot track which specific suggestions were accepted, potentially creating compliance gaps in regulated industries."
+    },
+    {
+      "severity": "low",
+      "title": "Extension security model still maturing",
+      "dim": "D6",
+      "desc": "GitHub Copilot Extensions are a relatively new feature (2024+) with a security model that is still evolving. Extensions are not sandboxed in isolated processes and the signing/verification infrastructure is limited compared to mature plugin ecosystems."
+    }
+  ],
+  "recs": [
+    {
+      "dim": "D3",
+      "text": "Configure content exclusions to prevent Copilot from sending sensitive files (secrets, credentials, proprietary algorithms) to the cloud. Implement network-level monitoring to verify Copilot traffic complies with data handling policies. Negotiate enhanced DPA with GitHub specifying data processing terms and retention."
+    },
+    {
+      "dim": "D5",
+      "text": "Implement code review processes that explicitly check for AI-generated vulnerabilities. Enable GitHub's content filtering to block suggestions matching public code. Train developers to critically evaluate Copilot suggestions, especially for security-sensitive code paths."
+    },
+    {
+      "dim": "D4",
+      "text": "Export GitHub audit logs to enterprise SIEM for long-term retention and correlation. Implement supplementary code review tracking to capture AI-assisted code changes. Use GitHub's API to monitor Copilot usage patterns and detect anomalies."
+    },
+    {
+      "dim": "D2",
+      "text": "Configure organization-level Copilot policies to restrict suggestion scope. Use content exclusions to protect sensitive directories. Implement pre-commit hooks that scan for common vulnerability patterns in AI-generated code."
+    },
+    {
+      "dim": "D6",
+      "text": "Restrict Copilot Extensions to only admin-approved extensions. Conduct security review of all third-party extensions before enabling. Monitor extension permission changes via GitHub audit log."
+    }
+  ],
+  "vetoChecks": [
+    {
+      "pass": true,
+      "label": "SOC 2 Type II certified (GitHub/Microsoft)"
+    },
+    {
+      "pass": true,
+      "label": "Enterprise plan does not use customer data for model training"
+    },
+    {
+      "pass": true,
+      "label": "IP indemnification available for Enterprise customers"
+    },
+    {
+      "pass": false,
+      "label": "Code transmitted to cloud for inference — may violate strict data sovereignty policies"
+    },
+    {
+      "pass": true,
+      "label": "End-to-end encryption (TLS 1.2+) for all data in transit"
+    }
+  ]
+}

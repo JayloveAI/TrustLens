@@ -1,0 +1,165 @@
+{
+  "toolName": "Fortinet FortiGate",
+  "category": "cloud_network",
+  "tagline": "Enterprise-grade Next-Generation Firewall (NGFW) platform delivering AI-powered threat protection, SD-WAN, and Zero Trust Network Access as a hybrid mesh firewall across on-premises and cloud environments.",
+  "dimScores": {
+    "D1": {
+      "score": 7,
+      "checks": [1, 1, 1, 1, 1, 1, 1, 0],
+      "evidence": "FortiGate supports extensive authentication methods for both admin and user access: Local authentication with password policies (retries, lockout, complexity), Remote authentication via LDAP (with Active Directory recursive search, least-privilege LDAP admin accounts), RADIUS (multiple servers, RADSEC, VSAs), TACACS+ (with VSA attributes for remote admins), SAML SSO (FortiAuthenticator, Microsoft Entra ID, Okta as IdPs), FortiCloud SSO, FSSO (Fortinet Single Sign-On with polling connector and Syslog source), SCIM server provisioning (new in 7.6), PKI/certificate authentication (with SAN field and LDAP-integrated certificate auth), RSA SecurID, and FortiToken MFA (mobile push, hard tokens, FortiToken Cloud). Password policies include complexity, retries, lockout time, and expiration. MFA is natively available via FortiToken. Documentation references 'Setting the administrator password retries and lockout time' and 'Customizing complexity options for the local user password policy'. No evidence of hardware security keys (FIDO2/WebAuthn) for admin console login was found.",
+      "missing": ["No native FIDO2/WebAuthn hardware security key support for direct admin console authentication"]
+    },
+    "D2": {
+      "score": 7,
+      "checks": [1, 1, 1, 1, 1, 1, 1, 0],
+      "evidence": "FortiGate implements granular RBAC through Administrator Profiles that define precise permission levels for GUI and CLI access. The documentation explicitly covers 'Administrator profiles' as a distinct section, with read-only, read-write, and custom profiles. VDOM (Virtual Domain) technology provides strong multi-tenant isolation by partitioning a single FortiGate into multiple virtual firewalls with separate routing tables, policies, and admin accounts. Admin accounts can be scoped to specific VDOMs. REST API admin accounts are supported with scoped access. Workspace mode enables configuration locking to prevent concurrent admin conflicts. SSH public key access and restricted SSH/Telnet jump host capabilities are available. Admin access can be restricted by trusted hosts (IP ranges). TACACS+ VSA attributes allow external role mapping. However, no native just-in-time (JIT) or time-limited privilege elevation workflow was found in documentation.",
+      "missing": ["No native just-in-time (JIT) or time-bound privilege elevation for admin access"]
+    },
+    "D3": {
+      "score": 8,
+      "checks": [1, 1, 1, 1, 1, 1, 1, 1],
+      "evidence": "As an on-premises hardware NGFW appliance, FortiGate provides full data sovereignty and control. All traffic inspection, logging, and policy enforcement occur locally on the appliance. Configuration files are encrypted using eCryptfs file system. TPM (Trusted Platform Module) support is available for hardware-based key storage. BIOS-level signature and file integrity checking protect firmware. Real-time file system integrity checking is built in. A built-in entropy source supports cryptographic operations. FortiGuard updates can be configured for air-gap environments (manual/USB updates). FIPS-CC mode and OpenSSL FIPS provider are supported (new in 7.6). IPsec VPN supports strong encryption algorithms, QKD (Quantum Key Distribution) integration, and KMIP-based KMS key retrieval. Configuration backups can be stored locally or sent to FortiManager. FortiCloud SSO is optional; telemetry to FortiGuard can be disabled. Data processed by FortiGuard services (e.g., sandboxing) is governed by Fortinet acting as a data processor under the customer's control.",
+      "missing": []
+    },
+    "D4": {
+      "score": 8,
+      "checks": [1, 1, 1, 1, 1, 1, 1, 1],
+      "evidence": "FortiGate offers comprehensive logging and audit capabilities. Logs include: traffic logs, UTM (Unified Threat Management) logs, event logs, and CLI command execution logs. Logs can be sent to FortiAnalyzer/FortiAnalyzer Cloud for centralized analysis, with support for multiple FortiAnalyzers per VDOM and automatic failover to alternate FortiAnalyzer. FortiSIEM/FortiSIEM Cloud integration provides SIEM correlation. Log fields include source/destination UUID, username, UTM details, session information, and RSSO data. NetFlow and sFlow export are supported for traffic analytics. Free-style log filters allow custom queries. Anonymized log generation is available for privacy compliance. FortiView provides real-time traffic visualization (sessions, sources, destinations, applications). Automation stitches enable event-driven responses (e.g., quarantine, CLI scripts, webhook notifications to Slack/Teams, AWS Lambda/Azure Functions). CLI command audit logging captures all administrative actions. SNMP traps and syslog output provide integration with third-party monitoring.",
+      "missing": []
+    },
+    "D5": {
+      "score": 5,
+      "checks": [1, 0, 1, 1, 0, 1, 1, 0],
+      "evidence": "Fortinet's Privacy Policy (effective January 6, 2025) describes their data handling practices. Fortinet acts as a 'processor' for most customer data processed through Fortinet Services, with the customer as the 'controller'. Processor Data centers are located primarily in Canada. Fortinet complies with the EU-U.S. Data Privacy Framework (DPF), UK Extension, and Swiss-U.S. DPF. Standard Contractual Clauses are used for international transfers. CCPA compliance is documented with access, correction, deletion, and opt-out rights. However, Fortinet acknowledges CCPA-defined 'sales' and 'sharing' of certain personal information (identifiers, internet activity, commercial information) to marketing and analytics providers. The privacy policy notes they 'do not respond to browser-based do-not-track signals.' Cookie-based tracking is used across Fortinet web properties. As an on-premises firewall, most network traffic data stays local, but FortiGuard service queries (AV updates, web filtering, sandbox submissions) do transmit data to Fortinet infrastructure. Retention periods are not fixed but based on purpose. Threat Data may be shared with security researchers, CERTs, and governmental entities.",
+      "missing": ["CCPA-defined 'sales' and 'sharing' of personal information to marketing/analytics providers", "No explicit data retention period commitments for all data categories", "Do not honor browser do-not-track signals"]
+    },
+    "D6": {
+      "score": 6,
+      "checks": [1, 1, 1, 1, 1, 0],
+      "evidence": "FortiGate offers extensive configuration and policy management APIs. REST API access is supported via dedicated REST API administrator accounts. FortiOS can be used as a Terraform provider for infrastructure-as-code deployments. FortiConverter service assists with configuration migration from other vendors. CLI supports configuration scripting and automation. Automation stitches provide event-driven workflows with triggers (event logs, schedules, certificate expiration, FortiAnalyzer events) and actions (CLI scripts, webhooks, cloud functions for AWS/Azure/GCP/AliCloud, quarantine). SDN connectors integrate with AWS, Azure, GCP, OCI, VMware NSX-T, Kubernetes (EKS/AKS/GKE/OKE), OpenStack, Nutanix, and more. Fortinet Developer Network provides API documentation. However, no evidence of a formal OpenAPI/Swagger specification for the FortiOS REST API was found in the public documentation, and CLI/API versioning practices are not explicitly documented.",
+      "missing": ["No publicly documented OpenAPI/Swagger specification for FortiOS REST API"]
+    },
+    "D7": {
+      "score": 6,
+      "checks": [1, 1, 1, 1, 1, 0],
+      "evidence": "FortiManager provides centralized multi-device management for FortiGate fleets, including configuration push, template-based provisioning, and policy management. FortiManager Cloud offers the same capabilities as a managed service. Fortinet Security Fabric enables hierarchical management with root and downstream FortiGates, SAML SSO across fabric members, and topology visualization. FortiAIOps provides AI-driven operations and insights. Managed FortiGate Service offers MSSP-style managed service. VDOM technology enables multi-tenancy on a single appliance. FortiCloud account management supports device transfers between accounts. However, multi-tenant RBAC in FortiManager has documented limitations (FortiManager admin access control is separate from FortiGate admin profiles), and no native Git-based configuration versioning or change review/approval workflow was found.",
+      "missing": ["No native Git-based configuration versioning or change review/approval workflow"]
+    },
+    "D8": {
+      "score": 6,
+      "checks": [1, 1, 1, 0, 1, 1],
+      "evidence": "FortiGate supports High Availability (HA) through multiple mechanisms: FGCP (FortiGate Clustering Protocol) for active-passive and active-active clustering with session synchronization, FGSP (FortiGate Session Life Protocol) for session synchronization across independent clusters, VRRP for virtual router redundancy, and standalone configuration synchronization. HA features include session pickup, stateful failover for ZTNA proxy sessions, HA heartbeat interfaces (unicast support), and out-of-band management with reserved interfaces. Upgrade prompt when critical vulnerability is detected upon login. Firmware can be managed with controlled upgrades and automatic upgrades. Multi-version cluster upgrades are supported in FGCP. RAID support is available on appropriate models. However, no formal published SLA for firmware patch release timelines was found, and Fortinet has had critical CVEs (e.g., CVE-2024-21762, CVE-2023-27997) in recent years affecting FortiOS.",
+      "missing": ["No formal published SLA commitments for security patch release timelines"]
+    },
+    "D9": {
+      "score": 6,
+      "checks": [1, 1, 1, 1, 1, 0],
+      "evidence": "Fortinet Security Fabric integrates FortiGate with a broad ecosystem: FortiAnalyzer, FortiSIEM, FortiSOAR, FortiSandbox, FortiNDR, FortiDeceptor, FortiClient EMS, FortiNAC, FortiMail, FortiWeb, and more. Threat feeds support STIX format for external threat intelligence integration. Automation stitches connect to AWS Lambda, Azure Functions, GCP Functions, Slack, Microsoft Teams, and custom webhooks. SDN connectors integrate with major cloud providers and virtualization platforms (AWS, Azure, GCP, OCI, VMware NSX-T, Kubernetes, OpenStack). ZTNA integrates with FortiClient EMS for device posture assessment. Inline CASB provides SaaS application visibility and control. FortiGuard services provide AI-powered threat intelligence. SCIM provisioning is new in FortiOS 7.6. However, no native integration with third-party CI/CD pipeline tools (e.g., Jenkins, GitLab CI, ArgoCD) was documented, and the ecosystem is primarily Fortinet-centric rather than open platform.",
+      "missing": ["No native CI/CD pipeline integration for infrastructure-as-code workflows"]
+    }
+  },
+  "risks": [
+    {
+      "severity": "high",
+      "title": "Historical critical CVEs in FortiOS SSL VPN and management plane",
+      "dim": "D8",
+      "desc": "FortiOS has experienced critical remotely exploitable vulnerabilities (e.g., CVE-2024-21762 heap overflow in SSL VPN, CVE-2023-27997 IPSec VPN RCE, CVE-2022-42475 SSL VPN RCE). Organizations must maintain aggressive patching schedules and follow Fortinet PSIRT advisories. SSL VPN should be carefully hardened per documented best practices."
+    },
+    {
+      "severity": "medium",
+      "title": "FortiGuard telemetry data transmission to Fortinet infrastructure",
+      "dim": "D5",
+      "desc": "FortiGate communicates with FortiGuard Distribution Network for AV/IPS updates, web filtering lookups, and sandbox submissions. While air-gap mode is supported, default configurations transmit query data (including URLs and file hashes) to Fortinet servers. Organizations with strict data sovereignty requirements should evaluate FortiManager as a local FortiGuard server and minimize external queries."
+    },
+    {
+      "severity": "medium",
+      "title": "CCPA-defined 'sales' of personal information by Fortinet",
+      "dim": "D5",
+      "desc": "Fortinet's privacy policy acknowledges CCPA-defined 'sales' and 'sharing' of identifiers, internet activity, and commercial information to marketing and analytics providers. While this applies to Fortinet's corporate operations rather than FortiGate traffic data, organizations subject to strict privacy regulations should review Fortinet's data handling for FortiCloud and FortiGuard cloud services."
+    },
+    {
+      "severity": "low",
+      "title": "Ecosystem lock-in to Fortinet Security Fabric",
+      "dim": "D9",
+      "desc": "While Fortinet Security Fabric provides extensive integration across the Fortinet product portfolio, integration with third-party security tools is limited compared to more open platforms. Organizations with heterogeneous security environments should evaluate REST API and syslog integration capabilities for non-Fortinet tools."
+    },
+    {
+      "severity": "low",
+      "title": "No FIDO2/WebAuthn support for admin console authentication",
+      "dim": "D1",
+      "desc": "FortiGate supports MFA via FortiToken (TOTP, push notifications, hardware tokens) but does not natively support FIDO2/WebAuthn hardware security keys for direct admin console login. Organizations standardizing on YubiKey or similar FIDO2 tokens should use SAML SSO through an IdP that supports FIDO2 as a workaround."
+    }
+  ],
+  "recs": [
+    {
+      "dim": "D1",
+      "text": "Enable FortiToken MFA for all admin accounts and enforce strong password policies (minimum 12 characters, lockout after 5 failed attempts). Use SAML SSO with a corporate IdP (e.g., Entra ID, Okta) that supports FIDO2/WebAuthn to achieve hardware key-based admin authentication."
+    },
+    {
+      "dim": "D2",
+      "text": "Implement least-privilege admin profiles: create separate read-only auditor accounts, restrict CLI access to only required administrators, and enable workspace mode to prevent concurrent configuration conflicts. Use VDOM isolation for multi-tenant environments."
+    },
+    {
+      "dim": "D3",
+      "text": "Enable FIPS-CC mode for regulated environments. Deploy FortiManager as a local FortiGuard update server in air-gapped networks. Enable TPM support and eCryptfs configuration encryption. Regularly verify BIOS integrity and file system signatures."
+    },
+    {
+      "dim": "D4",
+      "text": "Deploy FortiAnalyzer for centralized log retention and analysis. Enable CLI command execution logging. Configure automation stitches for critical security events (e.g., automatic quarantine on compromised host detection). Send logs to FortiSIEM for cross-platform correlation. Set up multiple FortiAnalyzers with failover for log redundancy."
+    },
+    {
+      "dim": "D5",
+      "text": "Minimize data transmitted to FortiGuard by using FortiManager as a local update server. Review and disable FortiGuard telemetry statistics sending if not required. For cloud-connected services (FortiCloud, FortiSandbox Cloud), evaluate data residency options and ensure Standard Contractual Clauses are in place for EU data."
+    },
+    {
+      "dim": "D6",
+      "text": "Use Terraform with the FortiOS provider for infrastructure-as-code management of FortiGate configurations. Implement configuration backups with version control. Automate security policy deployment through REST API with proper authentication and logging."
+    },
+    {
+      "dim": "D7",
+      "text": "Deploy FortiManager for centralized management of FortiGate fleets with template-based provisioning. Implement change management workflows using FortiManager's approval processes. Use FortiAIOps for proactive monitoring. Consider Managed FortiGate Service for organizations lacking dedicated firewall management staff."
+    },
+    {
+      "dim": "D8",
+      "text": "Deploy FortiGate in HA active-passive or active-active clusters. Enable session synchronization for stateful failover. Maintain a rigorous firmware patching schedule following Fortinet PSIRT advisories. Use controlled upgrades for production environments. Disable SSL VPN if not required; if used, follow documented SSL VPN security best practices."
+    },
+    {
+      "dim": "D9",
+      "text": "Leverage Security Fabric for integrated threat response across Fortinet products. Configure SDN connectors for dynamic policy updates in cloud environments. Use automation stitches with webhook actions to integrate with third-party SOAR and ticketing platforms. Implement threat feeds (STIX format) from trusted intelligence sources."
+    }
+  ],
+  "vetoChecks": [
+    {
+      "pass": true,
+      "label": "No evidence of government-mandated backdoors or deliberate cryptographic weaknesses"
+    },
+    {
+      "pass": true,
+      "label": "FIPS 140-2/CC certification available for compliance requirements"
+    },
+    {
+      "pass": true,
+      "label": "On-premises deployment model provides full data sovereignty and local control"
+    },
+    {
+      "pass": true,
+      "label": "No evidence of undisclosed data collection from firewall traffic beyond documented FortiGuard service queries"
+    },
+    {
+      "pass": true,
+      "label": "Comprehensive admin audit logging and configuration change tracking supported"
+    },
+    {
+      "pass": true,
+      "label": "Active security advisory program (PSIRT) with documented vulnerability disclosure and patching"
+    },
+    {
+      "pass": true,
+      "label": "Multi-vendor VPN interoperability supported (IKEv1/IKEv2 with third-party gateways)"
+    },
+    {
+      "pass": false,
+      "label": "Recent critical remotely exploitable CVEs (CVE-2024-21762) require ongoing vigilance and rapid patching"
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "toolName": "Windsurf (Codeium)",
+  "category": "ai_coding",
+  "tagline": "AI-native agentic IDE with Cascade autonomous coding assistant, enterprise-grade security with hybrid deployment options for regulated organizations",
+  "dimScores": {
+    "D1": {
+      "score": 3.6,
+      "checks": [0.7, 0.7, 0.8, 0.7, 0.8, 0.6, 0.5, 0.8],
+      "evidence": "Windsurf supports OAuth 2.0 for authentication via Codeium account. Token-based authentication with auto-renewal. API tokens stored locally in encrypted form (keychain/credential manager integration). MFA available via Codeium account settings. Enterprise plan supports SAML SSO integration. API key scoping limited — primarily all-or-nothing access. Limited centralized identity management — enterprise SSO available but AD integration not as deep as established IAM platforms. Bearer tokens transmitted over HTTPS.",
+      "missing": ["Limited API key permission scoping", "AD integration not as mature as enterprise tools", "No documented PKCE flow for OAuth"]
+    },
+    "D2": {
+      "score": 3.0,
+      "checks": [0.5, 0.4, 0.5, 0.4, 0.5, 0.3, 0.5, 0.6],
+      "evidence": "Windsurf's Cascade agent can read files, execute terminal commands, and modify code. Permission model includes allow/deny lists for commands but limited multi-level granularity. No true read-only mode for the AI agent. File operation scope can be limited via .windsurfrules configuration. Unknown/dangerous operations (e.g., rm -rf) are not blocked by default. Some dangerous operations trigger user confirmation dialogs. No sandbox — Cascade executes commands in the user's terminal environment. No execution timeout for agent operations. Enterprise admin can push policies to team members.",
+      "missing": ["No sandboxed execution environment for Cascade agent", "No read-only mode for AI agent operations", "Limited multi-level permission model", "No execution timeout controls for agent tasks"]
+    },
+    "D3": {
+      "score": 3.2,
+      "checks": [0.6, 0.5, 0.3, 0.4, 0.4, 0.5, 0.7, 0.7],
+      "evidence": "Code is sent to Codeium's cloud for AI inference via HTTPS. Proxy support documented for enterprise environments. Proxy settings propagate to terminal commands executed by Cascade. No custom API endpoint for enterprise gateway. Enterprise CA certificate support limited. Telemetry collected on usage patterns and suggestion quality (can be disabled in enterprise plan). Hybrid deployment available for enterprise — local inference option reduces cloud dependency. Enterprise plan promises no training on customer code. Data boundary documented in privacy policy.",
+      "missing": ["No fully on-premises deployment (hybrid requires some cloud connectivity)", "Limited custom API endpoint configuration", "Some telemetry collected by default", "CA certificate replacement not fully documented"]
+    },
+    "D4": {
+      "score": 2.6,
+      "checks": [0.5, 0.5, 0.7, 0.4, 0.6, 0.3, 0.3, 0.4],
+      "evidence": "Windsurf logs Cascade agent actions (file reads, command executions, edits) within the IDE. Logs include operation type and basic parameters. Timestamps included in activity history. Logs stored locally — not auto-persisted to cloud by default. Chat history and session state exportable. No native SIEM integration — would require custom log forwarding. No log tamper protection mechanism. Log retention controlled locally by user.",
+      "missing": ["No native SIEM integration", "No automatic log persistence to cloud", "No log tamper protection", "Log retention not centrally configurable", "Limited audit granularity compared to enterprise tools"]
+    },
+    "D5": {
+      "score": 2.2,
+      "checks": [0.3, 0.2, 0.4, 0.3, 0.2, 0.2, 0.2, 0.2],
+      "evidence": "Windsurf's Cascade agent reads entire codebase contexts, creating significant prompt injection attack surface. No documented system-level prompt injection defenses. .windsurfrules can provide guidance but can be overridden by workspace files. No explicit file content length limits for context. User configuration (.windsurfrules) can be modified by malicious code execution. Limited active warning for suspicious injection patterns. No PreToolUse hook mechanism. Injection scenarios: malicious comments in dependencies could influence agent behavior.",
+      "missing": ["No documented prompt injection defense system", "No file content length limits for context", "No PreToolUse hook mechanism", "User configuration can be overridden by workspace changes", "No injection test scenario coverage documented"]
+    },
+    "D6": {
+      "score": 2.2,
+      "checks": [0.3, 0.4, 0.2, 0.3, 0.4, 0.4],
+      "evidence": "Windsurf supports MCP (Model Context Protocol) servers for extending capabilities. MCP servers run as separate processes (some isolation). No documented MCP whitelist/blacklist mechanism. No MCP configuration signing protection. MCP servers do not natively support OAuth authentication. MCP tools inherit Cascade's permissions. Enterprise admins can restrict MCP server configuration.",
+      "missing": ["No MCP whitelist/blacklist mechanism", "No MCP configuration signing", "No OAuth support for remote MCP servers", "Limited MCP security documentation"]
+    },
+    "D7": {
+      "score": 3.0,
+      "checks": [0.5, 0.6, 0.4, 0.6, 0.3, 0.4],
+      "evidence": "Windsurf supports project-level .windsurfrules configuration files. Enterprise admin policies can be pushed via team management. Admin policies have higher precedence than user settings. Configuration supports basic inheritance (global → project). Admin console available for enterprise plan. Limited configuration version history. Environment variable override supported for API keys and endpoints.",
+      "missing": ["No robust configuration versioning or rollback", "Configuration inheritance depth limited", "No dedicated admin console dashboard (team management is basic)", "Environment variable override not fully documented"]
+    },
+    "D8": {
+      "score": 3.0,
+      "checks": [0.6, 0.5, 0.5, 0.5, 0.5, 0.5],
+      "evidence": "Windsurf shows credit/action usage for Cascade agent operations. Per-seat licensing with action-based credit allocation. Context window managed by the AI backend. Premium plans have higher credit limits but no hard budget controls. Usage dashboard shows credit consumption. Limited per-user/per-project breakdown in enterprise plan.",
+      "missing": ["No real-time token usage display", "No granular cost estimation", "No hard budget limits", "Limited chargeback reporting", "Credit system not transparent enough for enterprise budgeting"]
+    },
+    "D9": {
+      "score": 3.6,
+      "checks": [0.7, 0.8, 0.7, 0.5, 0.5, 0.7],
+      "evidence": "Windsurf/Codeium holds SOC 2 Type II certification (confirmed on windsurf.com/security). DPA available for enterprise customers. Data subject deletion rights supported per privacy policy. Data residency limited — primarily US-based infrastructure, hybrid option for enterprise. AI content labeling not implemented — no attribution on generated code. Security incident notification defined in enterprise agreement. Annual third-party penetration testing conducted.",
+      "missing": ["Data residency options limited (primarily US)", "No AI content attribution on generated code", "PIPL-specific compliance not explicitly documented"]
+    }
+  },
+  "risks": [
+    {
+      "severity": "high",
+      "title": "Cascade agent executes commands without sandboxing",
+      "dim": "D2",
+      "desc": "Windsurf's Cascade agent can execute terminal commands directly in the user's environment without sandboxing. A compromised dependency or malicious prompt injection could lead to arbitrary command execution on the developer's machine, potentially exfiltrating code or credentials."
+    },
+    {
+      "severity": "high",
+      "title": "Significant prompt injection attack surface",
+      "dim": "D5",
+      "desc": "Cascade reads entire codebase contexts including comments, dependencies, and configuration files. Malicious content in any of these could influence the agent's behavior. No documented defense system against prompt injection attacks."
+    },
+    {
+      "severity": "medium",
+      "title": "Code transmitted to cloud for inference",
+      "dim": "D3",
+      "desc": "Windsurf sends code context to Codeium's cloud for AI inference. While enterprise plans offer hybrid deployment and promise no training on customer data, the core inference still requires cloud connectivity in standard configurations."
+    },
+    {
+      "severity": "medium",
+      "title": "Limited audit logging and SIEM integration",
+      "dim": "D4",
+      "desc": "Windsurf stores activity logs locally with no native SIEM integration. Organizations requiring comprehensive audit trails of all AI-assisted code changes cannot easily integrate Windsurf into their security monitoring infrastructure."
+    },
+    {
+      "severity": "low",
+      "title": "MCP security model immature",
+      "dim": "D6",
+      "desc": "MCP server support in Windsurf lacks whitelist/blacklist mechanisms, configuration signing, and OAuth support for remote servers. The MCP security model is still evolving and may pose supply chain risk."
+    }
+  ],
+  "recs": [
+    {
+      "dim": "D2",
+      "text": "Configure .windsurfrules to restrict Cascade agent commands to a safe subset. Implement pre-execution review for high-risk commands (rm, curl, wget). Use containerized development environments (Docker/DevContainer) to limit blast radius of agent-executed commands."
+    },
+    {
+      "dim": "D5",
+      "text": "Implement code review processes specifically checking for AI-generated vulnerabilities. Train developers to recognize prompt injection patterns in dependencies. Use .windsurfrules to add security-awareness instructions to the agent's context."
+    },
+    {
+      "dim": "D3",
+      "text": "For enterprise deployments, evaluate Windsurf's hybrid deployment option to minimize cloud data exposure. Configure content exclusions for sensitive directories. Negotiate enhanced DPA specifying data processing terms, retention limits, and breach notification procedures."
+    },
+    {
+      "dim": "D4",
+      "text": "Implement custom log forwarding from Windsurf's local activity logs to enterprise SIEM. Establish code review audit trails that capture AI-assisted changes. Monitor credit usage anomalies as potential indicators of compromised accounts."
+    },
+    {
+      "dim": "D6",
+      "text": "Restrict MCP server usage to admin-approved servers only. Review all MCP server configurations for security before deployment. Monitor MCP server process activity for anomalous behavior."
+    }
+  ],
+  "vetoChecks": [
+    {
+      "pass": true,
+      "label": "SOC 2 Type II certified with annual penetration testing"
+    },
+    {
+      "pass": true,
+      "label": "Enterprise plan does not use customer data for model training"
+    },
+    {
+      "pass": true,
+      "label": "End-to-end encryption (HTTPS/TLS) for all data in transit"
+    },
+    {
+      "pass": false,
+      "label": "Cascade agent executes commands without sandbox — high risk for enterprise endpoints"
+    },
+    {
+      "pass": true,
+      "label": "Hybrid deployment available for regulated enterprises"
+    }
+  ]
+}

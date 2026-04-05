@@ -1,0 +1,81 @@
+{
+  "toolName": "Zscaler Internet Access",
+  "category": "cloud_network",
+  "tagline": "Cloud-native SSE/SWG platform delivering zero trust internet and SaaS access with AI-powered threat protection and inline DLP across 150+ global data centers",
+  "dimScores": {
+    "D1": {
+      "score": 4.4,
+      "checks": [0.9, 0.9, 0.9, 0.9, 1.0, 0.8, 1.0, 1.0],
+      "evidence": "ZIA provides enterprise-grade identity integration with SAML 2.0 SSO, AD/LDAP connector, SCIM-based user provisioning, and API key-based access with role scoping. MFA is enforced through IdP partnerships. OAuth 2.0 for API access, configurable session timeouts.",
+      "missing": ["No native built-in MFA engine (relies on IdP)", "No OAuth PKCE flow documentation for API clients specifically"]
+    },
+    "D2": {
+      "score": 4.0,
+      "checks": [1.0, 0.9, 0.8, 0.9, 0.3, 0.9, 0.8, 1.0],
+      "evidence": "Multi-tier admin roles (Super Admin, Admin, Operator, Auditor, Viewer) with granular permissions. Default-deny posture for uncategorized URLs/apps. Sandbox available for unknown file analysis. Policies pushed centrally to 150+ data centers.",
+      "missing": ["No enforced two-step confirmation for destructive admin operations"]
+    },
+    "D3": {
+      "score": 4.7,
+      "checks": [1.0, 0.9, 0.8, 0.9, 0.3, 0.3, 0.9, 0.9],
+      "evidence": "Full inline HTTPS/TLS proxy with SSL inspection. Custom CA certificates supported. Data residency across global regions. Privacy portal with DPA and transfer impact assessments. zscalerone.net for single-tenant, zscalergov.net for FedRAMP.",
+      "missing": ["No on-premises deployment (cloud-native SaaS)", "Telemetry inherent to shared intelligence model"]
+    },
+    "D4": {
+      "score": 4.5,
+      "checks": [1.0, 1.0, 1.0, 1.0, 0.9, 1.0, 0.9, 0.9],
+      "evidence": "Nanolog provides immutable audit logging with microsecond precision. Native SIEM integration via NSS (Splunk, QRadar, ArcSight, Sentinel). Logs include full user context, threat details, DLP events. Admin audit trail tracks all changes.",
+      "missing": ["Log retention granularity limited by license tier"]
+    },
+    "D5": {
+      "score": 0.5,
+      "checks": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.2],
+      "evidence": "Prompt injection defense not applicable to Zscaler ZIA — it is a cloud SWG/SSE platform, not an AI agent or LLM-based tool. URL filtering and sandbox provide indirect defense against malicious payloads.",
+      "missing": ["All 8 checks N/A for SWG/SSE platform"]
+    },
+    "D6": {
+      "score": 2.5,
+      "checks": [0.4, 0.7, 0.6, 0.7, 0.7, 0.8],
+      "evidence": "Third-party integrations via admin-managed API keys and OAuth tokens. URL/app whitelisting and blacklisting are core features. NSS destinations explicitly configured by admin. Extensions run within Zscaler ecosystem.",
+      "missing": ["No independent sandboxed process model for extensions", "No third-party plugin marketplace"]
+    },
+    "D7": {
+      "score": 4.3,
+      "checks": [0.9, 1.0, 0.9, 1.0, 0.9, 0.4],
+      "evidence": "Central admin portal pushes policies to 150+ data centers. Policy hierarchy (global > location > group > user). Admin audit trail with change history. Policies cannot be bypassed by users.",
+      "missing": ["No environment variable-based configuration override"]
+    },
+    "D8": {
+      "score": 3.2,
+      "checks": [0.8, 0.7, 0.7, 0.4, 0.8, 0.7],
+      "evidence": "Real-time bandwidth and transaction dashboards. License-based pricing with bandwidth tiers. Compression and caching optimize costs. Risk-based anomaly alerts. Department-level reporting for chargeback.",
+      "missing": ["No real-time budget hard limits", "Cost estimation tools basic"]
+    },
+    "D9": {
+      "score": 4.6,
+      "checks": [1.0, 1.0, 0.9, 0.9, 0.3, 0.9],
+      "evidence": "SOC 2 Type II, ISO 27001, FedRAMP High, CSA STAR certified. DPA and Transfer Impact Assessment available. GDPR, CCPA compliance documented. 150+ data centers with regional data residency. Security advisories and vulnerability disclosure program.",
+      "missing": ["AI content labeling not applicable (detection, not generation)"]
+    }
+  },
+  "risks": [
+    { "severity": "medium", "title": "No on-premises deployment option", "dim": "D3", "desc": "ZIA is exclusively cloud-native SaaS. zscalerone.net provides single-tenant isolation but remains cloud-hosted." },
+    { "severity": "low", "title": "MFA depends on external IdP", "dim": "D1", "desc": "No native MFA engine. Multi-factor authentication relies on IdP integration." },
+    { "severity": "medium", "title": "No destructive action confirmation for admin", "dim": "D2", "desc": "Critical admin operations lack enforced two-step confirmation dialogs." },
+    { "severity": "low", "title": "Log retention limited by license tier", "dim": "D4", "desc": "Extended log retention may require additional NSS infrastructure or external SIEM storage." }
+  ],
+  "recs": [
+    { "dim": "D1", "text": "Enforce MFA for all admin portal access via SAML-based SSO with IdP that enforces MFA." },
+    { "dim": "D4", "text": "Deploy NSS for centralized SIEM integration with Splunk/Sentinel for long-term retention." },
+    { "dim": "D3", "text": "Enable full TLS/SSL inspection with enterprise CA. Configure DLP policies for data sovereignty." },
+    { "dim": "D2", "text": "Create custom admin roles with minimal permissions. Implement separation of duties." },
+    { "dim": "D9", "text": "Execute DPA with Zscaler covering GDPR Article 28. Review sub-processor list regularly." }
+  ],
+  "vetoChecks": [
+    { "pass": true, "label": "No prompt injection susceptibility (SWG platform)" },
+    { "pass": true, "label": "No plaintext credential storage" },
+    { "pass": true, "label": "All traffic encrypted via TLS" },
+    { "pass": true, "label": "Comprehensive audit trail with immutable Nanolog" },
+    { "pass": true, "label": "150+ global data centers with data residency options" }
+  ]
+}

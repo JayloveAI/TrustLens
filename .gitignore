@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+*.lnk
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
+
+# Temp/build artifacts
+*.log
+screenshots/

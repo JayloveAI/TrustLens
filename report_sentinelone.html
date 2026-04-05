@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>SentinelOne — TrustLens 深度安全评估</title>
+  <style>/* ─── RESET & BASE ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:      #0a0d14;
+  --bg-card:      #111827;
+  --bg-card2:     #1a2233;
+  --bg-hover:     #1f2d42;
+  --border:       #1e2d45;
+  --border-light: #2a3f5f;
+  --text-primary: #f0f4ff;
+  --text-second:  #8899bb;
+  --text-muted:   #4a5a7a;
+  --accent:       #4f7fff;
+  --accent-glow:  rgba(79,127,255,.25);
+  --green:        #10b981;
+  --red:          #ef4444;
+  --amber:        #f59e0b;
+  --purple:       #8b5cf6;
+  --radius:       12px;
+  --radius-sm:    8px;
+  --shadow:       0 4px 24px rgba(0,0,0,.5);
+  --shadow-lg:    0 8px 48px rgba(0,0,0,.7);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ─── SCREENS ───────────────────────────────────────────────── */
+.screen { display: none; opacity: 0; }
+.screen.active { display: block; animation: screenFadeIn .4s ease forwards; }
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── NAV ───────────────────────────────────────────────────── */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,13,20,.85);
+  backdrop-filter: blur(12px);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { font-size: 22px; }
+.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+.logo-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  background: var(--accent); color: #fff;
+  padding: 2px 7px; border-radius: 99px;
+}
+.nav-links, .nav-actions { display: flex; align-items: center; gap: 16px; }
+.nav-link { color: var(--text-second); text-decoration: none; font-size: 14px; }
+.nav-link:hover { color: var(--text-primary); }
+
+/* ─── BUTTONS ───────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #4f7fff, #7c3aed);
+  color: #fff; font-size: 14px; font-weight: 600;
+  padding: 10px 22px; border-radius: 8px; border: none;
+  cursor: pointer; transition: all .2s;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+.btn-primary.btn-large {
+  font-size: 16px; padding: 14px 32px; border-radius: 10px;
+  width: 100%; justify-content: center; margin-top: 8px;
+}
+.btn-ghost {
+  background: transparent; color: var(--text-second);
+  border: 1px solid var(--border-light); font-size: 14px; font-weight: 500;
+  padding: 9px 18px; border-radius: 8px; cursor: pointer; transition: all .2s;
+}
+.btn-ghost:hover { background: var(--bg-card2); color: var(--text-primary); }
+
+/* ─── HERO ───────────────────────────────────────────────────── */
+.hero {
+  max-width: 820px; margin: 0 auto;
+  padding: 80px 24px 60px;
+  text-align: center;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(79,127,255,.1); border: 1px solid rgba(79,127,255,.3);
+  color: #8eb4ff; font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 99px; margin-bottom: 28px;
+}
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4f7fff;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(1.4); }
+}
+.hero-title {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800; line-height: 1.15;
+  letter-spacing: -.5px; margin-bottom: 20px;
+}
+.gradient-text {
+  background: linear-gradient(90deg, #4f7fff, #a78bfa, #f472b6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: 17px; color: var(--text-second);
+  line-height: 1.75; margin-bottom: 40px;
+}
+
+/* ─── EVAL CARD ─────────────────────────────────────────────── */
+.eval-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 36px 40px;
+  text-align: left;
+  box-shadow: var(--shadow-lg);
+}
+.eval-card-header { margin-bottom: 28px; }
+.eval-card-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.eval-card-header p { font-size: 14px; color: var(--text-second); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-second); letter-spacing: .3px;
+}
+.req { color: var(--red); }
+.form-group input, .form-group select {
+  background: var(--bg-card2); color: var(--text-primary);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 11px 14px; font-size: 14px; font-family: inherit;
+  transition: border-color .2s;
+  outline: none;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-group select option { background: var(--bg-card2); }
+.demo-link { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+.demo-link a { color: var(--accent); text-decoration: none; }
+.demo-link a:hover { text-decoration: underline; }
+
+/* ─── MODE COMPARISON PANEL ──────────────────────────────────── */
+.mode-hint { margin-top: 16px; margin-bottom: 8px; }
+.mode-compare {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+.mode-col {
+  text-align: center; padding: 14px 10px; border-radius: 10px;
+  background: var(--bg-card2); border: 1px solid var(--border);
+  transition: all .25s; cursor: default; opacity: .55;
+}
+.mode-col.active {
+  opacity: 1; border-color: var(--accent);
+  background: rgba(79,127,255,.06);
+  box-shadow: 0 0 16px rgba(79,127,255,.12);
+}
+.mc-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.mc-dims  { font-size: 12px; color: var(--text-second); margin-bottom: 3px; }
+.mc-conf  { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.mode-col.active .mc-conf { color: var(--green); }
+.mode-col:not(.active) .mc-conf { color: var(--text-muted); }
+.mc-method { font-size: 11px; color: var(--text-muted); }
+
+/* ─── DIMENSIONS PREVIEW ─────────────────────────────────────── */
+.dimensions-preview { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+.section-title { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 10px; }
+.section-sub { font-size: 15px; color: var(--text-second); text-align: center; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+.dim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media(max-width:768px){ .dim-grid { grid-template-columns: 1fr 1fr; } }
+.dim-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: all .25s; cursor: default;
+}
+.dim-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(79,127,255,.15);
+}
+.dim-icon { font-size: 28px; margin-bottom: 12px; }
+.dim-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.dim-weight { font-size: 12px; color: var(--text-muted); }
+
+/* ─── SCANNING ───────────────────────────────────────────────── */
+.scanning-wrapper {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh;
+  padding: 40px 24px; gap: 32px;
+}
+.scanning-orb { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; }
+.orb-ring {
+  position: absolute; border-radius: 50%;
+  border: 2px solid rgba(79,127,255,.3);
+  animation: orbSpin linear infinite;
+}
+.r1 { width: 100%; height: 100%; animation-duration: 4s; }
+.r2 { width: 75%; height: 75%; animation-duration: 3s; animation-direction: reverse; border-color: rgba(139,92,246,.4); }
+.r3 { width: 50%; height: 50%; animation-duration: 2s; border-color: rgba(244,63,94,.3); }
+@keyframes orbSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.orb-core { font-size: 40px; position: relative; z-index: 1; animation: float 3s ease-in-out infinite; }
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.scanning-title { font-size: 24px; font-weight: 700; }
+.scanning-progress-wrap {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; max-width: 440px;
+}
+.scanning-progress-bar {
+  flex: 1; height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.scan-fill {
+  height: 100%; width: 0; border-radius: 99px;
+  background: linear-gradient(90deg, #4f7fff, #a78bfa);
+  transition: width .3s ease;
+}
+.scan-log {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--text-second);
+  text-align: center; min-height: 80px; max-width: 500px;
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+.log-entry { animation: fadeSlide .3s ease; }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--amber); }
+.log-err { color: var(--red); }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── RESULTS NAV ────────────────────────────────────────────── */
+.nav-results { position: sticky; top: 0; }
+
+/* ─── RESULTS HERO ───────────────────────────────────────────── */
+.results-hero {
+  max-width: 1200px; margin: 0 auto;
+  padding: 40px 32px 24px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 24px;
+}
+.results-meta { flex: 1; min-width: 220px; }
+.meta-tool { font-size: 26px; font-weight: 800; display: flex; align-items: baseline; gap: 10px; }
+.tool-version { font-size: 14px; font-weight: 500; color: var(--text-second); }
+.meta-date { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+.score-display { display: flex; align-items: center; gap: 32px; }
+.score-ring-wrap { position: relative; width: 130px; height: 130px; }
+.score-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+.ring-fill {
+  fill: none; stroke: var(--accent); stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1), stroke .5s;
+}
+.score-number-wrap {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: row; gap: 2px;
+}
+.score-number { font-size: 36px; font-weight: 800; }
+.score-max { font-size: 14px; color: var(--text-muted); align-self: flex-end; padding-bottom: 6px; }
+.score-info { display: flex; flex-direction: column; gap: 10px; }
+.grade-badge {
+  font-size: 22px; font-weight: 800;
+  padding: 6px 20px; border-radius: 8px;
+  text-align: center;
+}
+.grade-A-plus { background: rgba(16,185,129,.2); color: #10b981; border: 1px solid rgba(16,185,129,.4); }
+.grade-A      { background: rgba(79,127,255,.2); color: #6e9fff; border: 1px solid rgba(79,127,255,.4); }
+.grade-B      { background: rgba(245,158,11,.2); color: #f59e0b; border: 1px solid rgba(245,158,11,.4); }
+.grade-C      { background: rgba(239,68,68,.15); color: #ef4444; border: 1px solid rgba(239,68,68,.35); }
+.grade-D      { background: rgba(239,68,68,.25); color: #f87171; border: 1px solid rgba(239,68,68,.5); }
+.verdict-text { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.industry-gap { font-size: 12px; color: var(--text-second); }
+
+/* ─── VETO PANEL ─────────────────────────────────────────────── */
+.veto-panel {
+  max-width: 1200px; margin: 0 auto 20px;
+  padding: 0 32px;
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.veto-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+}
+.veto-pass { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+.veto-fail { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.4); color: #f87171; }
+
+/* ─── RESULTS GRID ───────────────────────────────────────────── */
+.results-grid {
+  max-width: 1200px; margin: 0 auto; padding: 0 32px 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+}
+@media(max-width:900px){ .results-grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+.card-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+.card-radar { grid-row: 1 / 2; }
+.card-dims  { grid-row: 1 / 2; }
+.card-risks { grid-column: 1; }
+.card-recs  { grid-column: 2; }
+.radar-wrap { max-width: 300px; margin: 0 auto; }
+
+/* ─── DIM LIST ───────────────────────────────────────────────── */
+.dim-list { display: flex; flex-direction: column; gap: 10px; }
+.dim-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card2); cursor: pointer;
+  transition: background .15s;
+}
+.dim-row:hover { background: var(--bg-hover); }
+.dim-row-icon { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
+.dim-row-info { flex: 1; min-width: 0; }
+.dim-row-name { font-size: 13px; font-weight: 600; }
+.dim-row-weight { font-size: 11px; color: var(--text-muted); }
+.dim-row-bar-wrap { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+.dim-bar { width: 80px; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.dim-bar-fill { height: 100%; border-radius: 99px; transition: width 1s .5s; }
+.dim-score-txt { font-size: 13px; font-weight: 700; width: 28px; text-align: right; }
+
+/* ─── RISK / REC LIST ────────────────────────────────────────── */
+.risk-list, .rec-list { display: flex; flex-direction: column; gap: 14px; }
+.risk-item {
+  display: flex; gap: 12px;
+  padding: 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card2);
+}
+.risk-severity {
+  flex-shrink: 0; padding: 2px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 700;
+  align-self: flex-start; margin-top: 2px;
+}
+.sev-high   { background: rgba(239,68,68,.2);  color: #f87171; }
+.sev-medium { background: rgba(245,158,11,.2); color: #fbbf24; }
+.sev-low    { background: rgba(16,185,129,.15);color: #6ee7b7; }
+.risk-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.risk-desc  { font-size: 12px; color: var(--text-second); }
+.rec-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card2); border-left: 3px solid var(--accent);
+}
+.rec-dim { flex-shrink: 0; font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.rec-text { font-size: 13px; color: var(--text-second); }
+
+/* ─── MODAL ──────────────────────────────────────────────────── */
+.modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; }
+.modal.hidden { display: none; }
+.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); }
+.modal-box {
+  position: relative; z-index: 1;
+  background: var(--bg-card); border: 1px solid var(--border-light);
+  border-radius: 16px; box-shadow: var(--shadow-lg);
+  width: 90%; max-width: 660px; max-height: 85vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-report { max-width: 860px; }
+.modal-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: 18px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 18px; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: background .15s;
+}
+.modal-close:hover { background: var(--bg-card2); color: var(--text-primary); }
+.modal-body {
+  padding: 28px; overflow-y: auto; flex: 1;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.report-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ─── MODAL DETAIL ───────────────────────────────────────────── */
+.detail-intro { font-size: 14px; color: var(--text-second); }
+.detail-evidence {
+  background: var(--bg-card2); border-radius: var(--radius-sm);
+  padding: 16px;
+}
+.detail-evidence-title { font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: .8px; margin-bottom: 10px; }
+.evidence-code {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: #a5d8ff; line-height: 1.6; white-space: pre;
+  overflow-x: auto;
+}
+.check-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.check-table th { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .6px; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.check-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-second); }
+.check-table td:first-child { color: var(--text-primary); }
+.check-ok   { color: var(--green) !important; font-weight: 700; }
+.check-fail { color: var(--red)   !important; font-weight: 700; }
+.check-warn { color: var(--amber) !important; font-weight: 700; }
+
+/* ─── REPORT CONTENT ─────────────────────────────────────────── */
+.report-content { padding: 32px; overflow-y: auto; max-height: 70vh; font-size: 14px; line-height: 1.7; }
+.report-content h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.report-content h2 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.report-content h3 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; color: var(--accent); }
+.report-content p { color: var(--text-second); margin-bottom: 8px; }
+.report-content table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.report-content th { font-size: 12px; text-align: left; padding: 8px 12px; background: var(--bg-card2); color: var(--text-muted); font-weight: 700; }
+.report-content td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-second); }
+.report-content ul { padding-left: 20px; color: var(--text-second); }
+.report-content li { margin-bottom: 4px; }
+.report-stamp { font-size: 11px; color: var(--text-muted); margin-top: 24px; font-style: italic; }
+
+/* ─── BENCHMARK PAGE ─────────────────────────────────────────── */
+.bench-section {
+  max-width: 1200px; margin: 0 auto; padding: 40px 32px 60px;
+}
+.bench-title {
+  font-size: 30px; font-weight: 800; text-align: center; margin-bottom: 8px;
+}
+.bench-sub {
+  font-size: 15px; color: var(--text-second); text-align: center;
+  margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.bench-industry-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 36px;
+}
+.bench-industry-bar label {
+  font-size: 13px; font-weight: 600; color: var(--text-second);
+}
+.bench-industry-bar select {
+  background: var(--bg-card2); color: var(--text-primary);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; font-family: inherit; outline: none;
+}
+.bench-industry-bar select:focus { border-color: var(--accent); }
+
+/* Tool Score Cards */
+.bench-cards {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-bottom: 28px;
+}
+@media(max-width:900px) { .bench-cards { grid-template-columns: 1fr 1fr; } }
+.bench-tool-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px 20px;
+  text-align: center; cursor: pointer; transition: all .25s;
+  position: relative; overflow: hidden;
+}
+.bench-tool-card:hover {
+  border-color: var(--accent); transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(79,127,255,.15);
+}
+.bench-tool-card.best::after {
+  content: '🏆 最佳'; position: absolute; top: 10px; right: -24px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 3px 30px; transform: rotate(45deg);
+}
+.btc-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.btc-version { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+.btc-score {
+  font-size: 36px; font-weight: 800; margin-bottom: 4px;
+}
+.btc-grade {
+  display: inline-block; font-size: 13px; font-weight: 700;
+  padding: 3px 14px; border-radius: 99px; margin-bottom: 8px;
+}
+.btc-tagline { font-size: 11px; color: var(--text-second); line-height: 1.4; }
+.btc-bar-wrap {
+  margin-top: 12px; height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden; position: relative;
+}
+.btc-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.btc-threshold-mark {
+  position: absolute; top: -3px; width: 2px; height: 12px;
+  background: #fff; border-radius: 1px; opacity: .6;
+}
+
+/* Chart Card */
+.bench-chart-card { margin-bottom: 20px; }
+.bench-chart-wrap { max-height: 400px; }
+
+/* Compare Table */
+.bench-table-wrap { overflow-x: auto; }
+.bench-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.bench-table th {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-align: left; padding: 10px 14px;
+  border-bottom: 2px solid var(--border); letter-spacing: .4px;
+  position: sticky; top: 0; background: var(--bg-card);
+}
+.bench-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text-second);
+}
+.bench-table td:first-child {
+  color: var(--text-primary); font-weight: 600; white-space: nowrap;
+}
+.bench-table tr:hover td { background: var(--bg-card2); }
+.bench-best-cell { color: var(--green) !important; font-weight: 700 !important; }
+.bench-worst-cell { color: var(--red) !important; }
+
+/* ─── STAGGER ANIMATIONS ─────────────────────────────────────── */
+.dim-row { animation: staggerIn .4s ease both; }
+.dim-row:nth-child(1)  { animation-delay: .05s; }
+.dim-row:nth-child(2)  { animation-delay: .1s; }
+.dim-row:nth-child(3)  { animation-delay: .15s; }
+.dim-row:nth-child(4)  { animation-delay: .2s; }
+.dim-row:nth-child(5)  { animation-delay: .25s; }
+.dim-row:nth-child(6)  { animation-delay: .3s; }
+.dim-row:nth-child(7)  { animation-delay: .35s; }
+.dim-row:nth-child(8)  { animation-delay: .4s; }
+.dim-row:nth-child(9)  { animation-delay: .45s; }
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.bench-tool-card { animation: cardPop .5s ease both; }
+.bench-tool-card:nth-child(1) { animation-delay: .05s; }
+.bench-tool-card:nth-child(2) { animation-delay: .15s; }
+.bench-tool-card:nth-child(3) { animation-delay: .25s; }
+.bench-tool-card:nth-child(4) { animation-delay: .35s; }
+@keyframes cardPop {
+  from { opacity: 0; transform: scale(.92) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Dim card hover upgrade */
+.dim-card { animation: cardPop .5s ease both; }
+.dim-card:nth-child(1) { animation-delay: .0s; }
+.dim-card:nth-child(2) { animation-delay: .06s; }
+.dim-card:nth-child(3) { animation-delay: .12s; }
+.dim-card:nth-child(4) { animation-delay: .18s; }
+.dim-card:nth-child(5) { animation-delay: .24s; }
+.dim-card:nth-child(6) { animation-delay: .3s; }
+.dim-card:nth-child(7) { animation-delay: .36s; }
+.dim-card:nth-child(8) { animation-delay: .42s; }
+.dim-card:nth-child(9) { animation-delay: .48s; }
+
+/* Veto items stagger */
+.veto-item { animation: staggerIn .3s ease both; }
+.veto-item:nth-child(2) { animation-delay: .05s; }
+.veto-item:nth-child(3) { animation-delay: .1s; }
+.veto-item:nth-child(4) { animation-delay: .15s; }
+.veto-item:nth-child(5) { animation-delay: .2s; }
+.veto-item:nth-child(6) { animation-delay: .25s; }
+
+/* ─── FRAMEWORK DOC MODAL ───────────────────────────────────── */
+.modal-doc { max-width: 780px; }
+.doc-url-section { margin-bottom: 20px; }
+.doc-label { font-size: 13px; font-weight: 700; color: var(--text-second); display: block; margin-bottom: 8px; }
+.doc-url-row { display: flex; gap: 10px; }
+.doc-url-row input {
+  flex: 1; background: var(--bg-card2); color: var(--text-primary);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 10px 14px; font-size: 14px; font-family: inherit; outline: none;
+  transition: border-color .2s;
+}
+.doc-url-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.doc-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.doc-divider {
+  position: relative; text-align: center; margin: 28px 0;
+  border-top: 1px solid var(--border);
+}
+.doc-divider span {
+  position: relative; top: -10px;
+  background: var(--bg-card); padding: 0 16px;
+  font-size: 12px; color: var(--text-muted); font-weight: 600;
+}
+.doc-builtin h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.doc-builtin h4 { font-size: 14px; font-weight: 700; margin: 24px 0 10px; color: var(--accent); }
+.doc-intro { font-size: 13px; color: var(--text-second); margin-bottom: 16px; }
+.doc-dims-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+@media(max-width:600px) { .doc-dims-grid { grid-template-columns: 1fr 1fr; } }
+.doc-dim-card {
+  background: var(--bg-card2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px;
+  transition: border-color .2s;
+}
+.doc-dim-card:hover { border-color: var(--accent); }
+.doc-dim-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.doc-dim-icon { font-size: 18px; }
+.doc-dim-id { font-size: 11px; font-weight: 700; color: var(--accent); }
+.doc-dim-w { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+.doc-dim-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.doc-dim-desc { font-size: 11px; color: var(--text-second); line-height: 1.5; margin-bottom: 6px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.doc-dim-checks { font-size: 10px; color: var(--text-muted); }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.doc-table th { text-align: left; padding: 8px 12px; color: var(--text-muted); font-size: 11px; font-weight: 700; border-bottom: 1px solid var(--border); }
+.doc-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-second); }
+.doc-table td:first-child { font-weight: 800; font-size: 15px; }
+.grade-A-plus { color: #10b981; }
+.grade-A { color: #6e9fff; }
+.grade-B { color: #f59e0b; }
+.grade-C { color: #ef4444; }
+.grade-D { color: #f87171; }
+.doc-veto ul { padding-left: 20px; font-size: 13px; color: var(--text-second); }
+.doc-veto li { margin-bottom: 4px; }
+
+/* ─── BENCH TOOL SELECTOR ───────────────────────────────────── */
+.bench-tool-selector {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.bench-tool-selector > label {
+  font-size: 13px; font-weight: 600; color: var(--text-second);
+}
+.bts-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.bts-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 500;
+  background: var(--bg-card2); border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer; transition: all .2s;
+  user-select: none; -webkit-user-select: none;
+}
+.bts-chip input { display: none; }
+.bts-chip.active {
+  background: rgba(79,127,255,.12); border-color: var(--accent);
+  color: var(--text-primary);
+}
+.bts-chip:hover { border-color: var(--accent); }
+
+/* ─── BENCH RADAR OVERLAY ───────────────────────────────────── */
+.bench-radar-wrap { max-width: 480px; margin: 0 auto; }
+
+/* ─── BENCH SUMMARY ─────────────────────────────────────────── */
+.bench-summary { margin-top: 28px; }
+.bench-summary-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; text-align: center; }
+.bench-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.bench-sw-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: border-color .2s;
+}
+.bench-sw-card:hover { border-color: var(--accent); }
+.bsw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.bsw-name { font-size: 15px; font-weight: 700; }
+.bsw-score { font-size: 24px; font-weight: 800; }
+.bsw-section { margin-bottom: 12px; }
+.bsw-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .6px; margin-bottom: 8px; }
+.bsw-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.bsw-item:last-child { border-bottom: none; }
+.bsw-dim-icon { font-size: 16px; flex-shrink: 0; }
+.bsw-dim-name { font-size: 12px; color: var(--text-second); flex: 1; }
+.bsw-dim-score { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+/* ─── PRINT STYLES ──────────────────────────────────────────── */
+@media print {
+  :root {
+    --bg-base: #fff; --bg-card: #fff; --bg-card2: #f8f9fa;
+    --bg-hover: #f0f0f0;
+    --border: #ddd; --border-light: #ccc;
+    --text-primary: #111; --text-second: #444; --text-muted: #888;
+  }
+  body { background: #fff; color: #111; font-size: 12px; }
+
+  .nav, .modal-close, .report-actions, .btn-primary, .btn-ghost { display: none !important; }
+  .modal-overlay { display: none !important; }
+  .modal { position: static !important; display: block !important; }
+  .modal.hidden { display: block !important; }
+  .modal-box {
+    position: static !important; width: 100% !important; max-width: 100% !important;
+    max-height: none !important; box-shadow: none !important; border: none !important;
+    border-radius: 0 !important;
+  }
+  .report-content { max-height: none !important; overflow: visible !important; padding: 0 !important; }
+
+  .report-content table { page-break-inside: avoid; }
+  .report-content th { background: #f0f0f0 !important; color: #333 !important; }
+  .report-content td { border-color: #ddd !important; color: #333 !important; }
+  .report-content h1 { color: #111 !important; }
+  .report-content h2 { color: #333 !important; border-color: #ccc !important; }
+  .report-content li, .report-content p { color: #333 !important; }
+  .report-stamp { color: #999 !important; }
+
+  h2 { page-break-after: avoid; }
+  table, .risk-item { page-break-inside: avoid; }
+
+  .screen, .screen.active { display: none !important; }
+  #report-modal { display: block !important; }
+  #report-modal .modal-header h2 { display: block; font-size: 10px; color: #999; margin-bottom: 8px; }
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .nav-links, .nav-actions { gap: 8px; }
+  .nav-link { font-size: 12px; }
+  .btn-ghost { font-size: 12px; padding: 7px 12px; }
+  .btn-primary { font-size: 12px; padding: 8px 14px; }
+
+  .hero { padding: 40px 16px 40px; }
+  .hero-title { font-size: 28px; }
+  .hero-sub { font-size: 14px; margin-bottom: 24px; }
+
+  .eval-card { padding: 24px 20px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .mode-compare { grid-template-columns: 1fr; }
+
+  .dimensions-preview { padding: 0 16px 40px; }
+  .section-title { font-size: 22px; }
+  .dim-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .results-hero { padding: 24px 16px 16px; flex-direction: column; align-items: stretch; }
+  .score-display { justify-content: center; }
+  .score-ring-wrap { width: 100px; height: 100px; }
+  .score-number { font-size: 28px; }
+  .results-grid { grid-template-columns: 1fr; padding: 0 16px 40px; }
+  .card-risks, .card-recs { grid-column: 1; }
+  .veto-panel { padding: 0 16px; }
+
+  .bench-section { padding: 24px 16px 40px; }
+  .bench-title { font-size: 22px; }
+  .bench-cards { grid-template-columns: 1fr 1fr !important; }
+  .bench-tool-selector { flex-direction: column; }
+  .btc-score { font-size: 28px; }
+
+  .modal-box { width: 95%; max-height: 90vh; }
+  .modal-header { padding: 16px 20px; }
+  .modal-body { padding: 20px; }
+  .doc-dims-grid { grid-template-columns: 1fr 1fr; }
+  .report-content { padding: 20px !important; }
+}
+
+@media (max-width: 480px) {
+  .hero-title { font-size: 24px; }
+  .dim-grid { grid-template-columns: 1fr; }
+  .bench-cards { grid-template-columns: 1fr !important; }
+  .doc-dims-grid { grid-template-columns: 1fr; }
+  .bench-summary-grid { grid-template-columns: 1fr; }
+  .score-display { flex-direction: column; align-items: center; }
+  .nav-links { display: none; }
+  .meta-tool { font-size: 20px; }
+}
+
+  .report-page{max-width:960px;margin:0 auto;padding:40px 32px 60px}
+  h2{font-size:20px;font-weight:700;margin:32px 0 16px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:16px;font-weight:700;margin:16px 0 8px;color:var(--accent)}
+  .hero{text-align:center;margin-bottom:36px}
+  .hero h1{font-size:28px;font-weight:800;margin-bottom:4px}
+  .hero-sub{color:var(--text-muted);font-size:13px}
+  .score-circle{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:120px;height:120px;border-radius:50%;border:4px solid #f59e0b;margin:20px auto}
+  .score-circle .num{font-size:40px;font-weight:900;color:#f59e0b;line-height:1}
+  .score-circle .grade{font-size:16px;font-weight:700;color:#f59e0b}
+  .radar-wrap{display:flex;justify-content:center;margin:20px 0}
+  </style>
+</head>
+<body>
+<div class="report-page">
+  <div class="hero">
+    <h1>SentinelOne</h1>
+    <div class="hero-sub">AI-powered autonomous endpoint security platform with Singularity XDR · 2026年4月3日 · 互联网/科技70分基准</div>
+    <div class="score-circle">
+      <div class="num">74</div>
+      <div class="grade">B</div>
+    </div>
+    <div style="font-size:14px;color:#f59e0b">⚠️ 有条件引入，需补偿控制</div>
+    <div style="color:#10b981;font-size:12px;margin-top:4px">✅ 达标行业基准</div>
+  </div>
+
+  <div style="grid-column:1/-1;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px">📋 执行摘要</div><div style="font-size:14px;color:var(--text-second);line-height:1.8">SentinelOne Singularity XDR 在终端检测和审计追溯方面表现突出（D4: 4.5），AI 驱动的自主响应和 Storyline 技术是其差异化优势。但纯云架构限制了数据主权控制（D3: 3.4），且成本可见性较弱（D8: 2.8）。适合安全团队成熟度较高的企业作为核心 EDR 方案。</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px"><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:10px">💪 核心优势（Top 3 维度）</div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="font-size:16px">📋</span><span style="flex:1;font-size:13px;color:var(--text-second)">D4 审计日志与可追溯性</span><span style="font-size:14px;font-weight:800;color:#10b981">4.5</span><div style="width:60px;height:6px;background:rgba(16,185,129,.15);border-radius:3px;overflow:hidden"><div style="width:90%;height:100%;background:#10b981;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="font-size:16px">📜</span><span style="flex:1;font-size:13px;color:var(--text-second)">D9 合规与法规对齐</span><span style="font-size:14px;font-weight:800;color:#10b981">4.3</span><div style="width:60px;height:6px;background:rgba(16,185,129,.15);border-radius:3px;overflow:hidden"><div style="width:86%;height:100%;background:#10b981;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="font-size:16px">🛡️</span><span style="flex:1;font-size:13px;color:var(--text-second)">D2 权限最小化与操作授权</span><span style="font-size:14px;font-weight:800;color:#10b981">4.2</span><div style="width:60px;height:6px;background:rgba(16,185,129,.15);border-radius:3px;overflow:hidden"><div style="width:84%;height:100%;background:#10b981;border-radius:3px"></div></div></div></div><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:10px">⚠️ 主要短板（Bottom 3 维度）</div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px">🧠</span><span style="flex:1;font-size:13px;color:var(--text-second)">D5 Prompt Injection 防御</span><span style="font-size:14px;font-weight:800;color:#f97316">2.0</span><div style="width:60px;height:6px;background:rgba(239,68,68,.1);border-radius:3px;overflow:hidden"><div style="width:40%;height:100%;background:#f97316;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px">💰</span><span style="flex:1;font-size:13px;color:var(--text-second)">D8 成本控制与使用监控</span><span style="font-size:14px;font-weight:800;color:#f97316">2.8</span><div style="width:60px;height:6px;background:rgba(239,68,68,.1);border-radius:3px;overflow:hidden"><div style="width:56%;height:100%;background:#f97316;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px">🔌</span><span style="flex:1;font-size:13px;color:var(--text-second)">D6 第三方扩展（MCP/插件）安全</span><span style="font-size:14px;font-weight:800;color:#f59e0b">3.2</span><div style="width:60px;height:6px;background:rgba(239,68,68,.1);border-radius:3px;overflow:hidden"><div style="width:64%;height:100%;background:#f59e0b;border-radius:3px"></div></div></div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px"><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:10px">🚨 关键风险</div><div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">🔴 Cloud-native architecture with no on-premises deployment option</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">SentinelOne is fundamentally a cloud SaaS platform. All endpoint telemetry and threat data is transmitted to SentinelOne</div></div><div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">🔴 Endpoint metadata and threat data used in ML model training</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">The privacy policy explicitly states that Threat Data (including malware, URLs, processes, techniques, metadata) is used</div></div><div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">🟡 Purple AI generative AI interface lacks documented prompt injection defenses</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">SentinelOne's Purple AI provides a generative AI interface for security analysts (natural language threat hunting). Spec</div></div></div><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px">🎯 提升建议</div><div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-size:11px;margin-top:2px">▶</span><span style="font-size:12px;color:var(--text-second);line-height:1.5"><strong>D3:</strong> For organizations with strict data sovereignty requirements, deploy SentinelOne agents in offline/ai</span></div><div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-size:11px;margin-top:2px">▶</span><span style="font-size:12px;color:var(--text-second);line-height:1.5"><strong>D5:</strong> When using Purple AI, implement compensating controls: restrict Purple AI access to senior analysts </span></div><div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-size:11px;margin-top:2px">▶</span><span style="font-size:12px;color:var(--text-second);line-height:1.5"><strong>D8:</strong> Implement internal governance for endpoint deployment tracking. Use the Management Console's site/gr</span></div></div></div>
+  <h2>📊 九维度雷达图</h2>
+  <div class="radar-wrap"><svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+    <path d="M160.0,135.7 L175.6,141.4 L184.0,155.8 L181.1,172.2 L168.3,182.9 L151.7,182.9 L138.9,172.2 L136.0,155.8 L144.4,141.4Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,111.4 L191.3,122.7 L207.9,151.6 L202.1,184.3 L176.6,205.7 L143.4,205.7 L117.9,184.3 L112.1,151.6 L128.7,122.7Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,87.0 L206.9,104.1 L231.9,147.3 L223.2,196.5 L185.0,228.6 L135.0,228.6 L96.8,196.5 L88.1,147.3 L113.1,104.1Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,62.7 L222.5,85.5 L255.8,143.1 L244.2,208.6 L193.3,251.4 L126.7,251.4 L75.8,208.6 L64.2,143.1 L97.5,85.5Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,38.4 L238.2,66.8 L279.8,138.9 L265.3,220.8 L201.6,274.3 L118.4,274.3 L54.7,220.8 L40.2,138.9 L81.8,66.8Z" fill="none" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="160.0" y2="38.4" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="238.2" y2="66.8" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="279.8" y2="138.9" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="265.3" y2="220.8" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="201.6" y2="274.3" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="118.4" y2="274.3" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="54.7" y2="220.8" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="40.2" y2="138.9" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="81.8" y2="66.8" stroke="#1e2d45" stroke-width="1"/>
+    <path d="M160.0,60.3 L225.7,81.8 L241.4,145.6 L254.8,214.7 L176.6,205.7 L133.4,233.1 L75.8,208.6 L92.9,148.2 L92.8,79.9Z" fill="rgba(79,127,255,.2)" stroke="#4f7fff" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="160.0" cy="60.3" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="225.7" cy="81.8" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="241.4" cy="145.6" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="254.8" cy="214.7" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="176.6" cy="205.7" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="133.4" cy="233.1" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="75.8" cy="208.6" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="92.9" cy="148.2" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="92.8" cy="79.9" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><text x="160.0" y="15.4" text-anchor="middle" fill="#8899bb" font-size="11" font-weight="600">D1</text><text x="249.1" y="53.8" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D2</text><text x="296.5" y="135.9" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D3</text><text x="280.1" y="229.3" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D4</text><text x="207.4" y="304.3" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D5</text><text x="112.6" y="290.3" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D6</text><text x="39.9" y="229.3" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D7</text><text x="23.5" y="135.9" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D8</text><text x="70.9" y="53.8" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D9</text>
+  </svg></div>
+
+  <h2>🔍 维度详细分析</h2>
+  
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🔐</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D1: 身份认证与访问控制</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具的身份认证强度，包括支持的认证协议、多因素认证、Token 管理等。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.1</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 15%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:82%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 OAuth 2.0 / PKCE</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">Token 自动续期机制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">认证凭证无明文本地存储</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 MFA</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持企业 SSO / SAML</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 API Key 权限范围限制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持集中式身份管理(AD)</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">Bearer Token 传输安全</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">SentinelOne Singularity Console supports OAuth 2.0 for API authentication. MFA is fully supported and enforced for console access. Enterprise SSO via SAML 2.0 is documented and integrates with all major IdPs. API tokens support scope-limited permissions (Viewer, Analyst, Admin scopes). AD/LDAP integration available for centralized identity management. Bearer tokens transmitted over TLS 1.2+. Console Data includes 'authentication credentials' referenced in privacy policy as managed securely. Token auto-renewal supported via API token regeneration workflows.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No explicit documentation of PKCE flow for OAuth in public docs</div><div>• Token auto-rotation period not publicly documented</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🛡️</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D2: 权限最小化与操作授权</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具对文件系统、命令执行等高危操作的权限控制精度。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.2</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 20%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:84%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">多级权限模型（非仅允许/拒绝）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持禁用命令执行（ReadOnly模式）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">文件操作范围可限制到目录</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">未知操作默认最高权限要求</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">危险操作有二次确认机制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">沙箱默认开启且不易关闭</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">操作有执行时间超时控制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">权限配置可集中推送给所有用户</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">SentinelOne implements granular RBAC with multiple pre-defined roles (Viewer, Analyst, IR, Admin, IT) plus custom roles -- a multi-level permission model well beyond binary allow/deny. Read-only console mode available for analysts. Agent operations can be scoped by site/group/site-level policies. RemoteOps includes execution timeout controls and command confirmation mechanisms. Sandbox (deep visibility) is default-on and actively monitors all processes. Policies are centrally managed and pushed from the Management Console to all agents across sites globally. Unknown/risky operations default to restrictive posture requiring Admin approval.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• File operation scoping to specific directories not granularly documented in public materials</div><div>• Explicit documentation of operation timeout values not publicly available</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🌐</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D3: 数据流向与主权控制</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估代码数据发送到哪里、是否可以通过企业安全网关拦截、是否支持私有化部署。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f59e0b;">3.4</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 18%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:68%;height:100%;background:#f59e0b;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 HTTPS 企业代理</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">代理设置传播到子进程（bash等）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持自定义 API 端点（企业网关）</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持企业 CA 证书替换</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">无后台遥测/分析数据</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持私有化本地部署</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">数据不用于模型训练</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">代码数据边界文档明确</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">HTTPS proxy support documented for agent-to-console communication. Proxy settings propagate via agent configuration policies. Privacy policy confirms data is sent to US-based cloud (Singularity Management Console). Threat Data is used in proprietary ML engines but limited personal info is 'never incorporated into the Solutions, nor is it used to contact or market products.' Data Processing Addendum available for enterprise customers. International transfers use EU-approved standard contractual clauses. Singularity Data Lake provides some data residency control. AWS-hosted across regions worldwide.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No fully on-premises/local deployment option -- SentinelOne is fundamentally a cloud-native SaaS platform</div><div>• No support for custom API endpoint/enterprise gateway for agent communication</div><div>• Telemetry and analytics data collection is inherent to the platform's operation</div><div>• CA certificate replacement for agent-to-cloud communication not explicitly documented</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">📋</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D4: 审计日志与可追溯性</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具的操作记录完整性，包括工具调用日志、会话持久化和 SIEM 集成能力。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.5</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 15%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:90%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">每次工具调用有日志记录</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志含工具名称与输入参数</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志含时间戳</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志自动持久化（不依赖用户）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">会话可完整导出/存档</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">SIEM 集成（Splunk/ELK）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志防篡改机制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志保留期可配置</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Every agent action, detection, and response is logged with full context (tool/process name, input parameters, timestamps). Singularity Data Lake provides persistent log storage with configurable retention. Deep Visibility feature captures full Storyline of all endpoint activity. AI SIEM integrates natively with Splunk, ELK, and other SIEM platforms via Singularity Marketplace integrations. Console audit trail tracks all user actions including configuration changes. Singularity RemoteOps Forensics provides comprehensive investigation and archiving capabilities. Log data protected by the same RBAC controls as the platform.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Explicit log tamper-protection cryptographic mechanism (e.g., blockchain hashing) not documented publicly</div><div>• Log retention period configuration specifics not in public documentation</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🧠</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D5: Prompt Injection 防御</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具对外部内容中嵌入恶意指令的抵御能力。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f97316;">2.0</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 12%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:40%;height:100%;background:#f97316;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">系统提示含注入防御指令</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">外部文件内容有长度上限</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">用户配置无法覆盖安全指令</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">AI 会主动警告可疑注入</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">PreToolUse 钩子可拦截</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">20%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">注入测试场景1通过（文件内容）</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">20%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">注入测试场景2通过（角色扮演）</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">20%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">注入测试场景3通过（间接URL）</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">20%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">SentinelOne is not an AI coding assistant -- it is an EDR/XDR cybersecurity platform. Prompt injection in the traditional sense (manipulating an LLM coding agent) does not directly apply. However, SentinelOne has a 'Prompt Security' offering to secure AI tools across the enterprise, and Purple AI (Generative AI for SecOps) is their AI query interface. Purple AI likely has input sanitization but specific prompt injection defenses are not publicly documented. The platform itself is designed to detect malicious activity, including techniques that could resemble injection attacks on endpoints.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No documented prompt injection defense for Purple AI interface</div><div>• No external file content length limits applicable (not a file-processing AI tool)</div><div>• No PreToolUse hook mechanism (not an AI coding agent)</div><div>• Injection test scenarios N/A to EDR platform</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🔌</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D6: 第三方扩展（MCP/插件）安全</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具的插件/扩展生态系统安全机制，防止供应链攻击。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f59e0b;">3.2</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 8%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:64%;height:100%;background:#f59e0b;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 在独立进程中运行</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 白名单/黑名单机制</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 配置有签名保护</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">远程 MCP 支持 OAuth</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 受主权限模型约束</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">管理员可禁止用户添加 MCP</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Singularity Marketplace provides one-click integrations with third-party tools (SIEM, SOAR, ticketing, etc.). These integrations are governed by the platform's RBAC model and centrally managed by admins. Administrators can enable/disable marketplace integrations. Integration configurations are managed at the console (management) level, not by individual endpoints. Third-party integrations run within the platform's security boundary. Singularity Hyperautomation provides automation with governance controls.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No MCP (Model Context Protocol) support -- not applicable to EDR</div><div>• No documented process isolation for third-party integrations (sandboxed execution)</div><div>• No OAuth for remote integration connections explicitly documented</div><div>• No signed configuration protection for integrations publicly documented</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">⚙️</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D7: 配置治理与集中管控</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估企业管理员能否集中推送配置，防止用户绕过安全策略。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.0</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 6%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:80%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持项目级统一配置</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">管理员策略不可被用户覆盖</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">配置支持继承与深度合并</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">有管理后台推送配置</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">配置变更有版本历史</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持环境变量强制覆盖</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Policies are centrally managed at the Management Console level and pushed to all agents. Admin-defined policies cannot be overridden by endpoint users. Site/group hierarchy supports policy inheritance (Global > Site > Group). Configuration changes tracked in audit logs with user attribution. Environment variable and registry-based configuration overrides available for agents. Management Console provides admin dashboard for centralized configuration governance across all endpoints.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Configuration version history / rollback feature not explicitly documented publicly</div><div>• Deep merge semantics for policy inheritance not fully detailed in public docs</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">💰</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D8: 成本控制与使用监控</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 Token 用量可见性、预算控制和费用异常告警能力。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f97316;">2.8</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 4%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:56%;height:100%;background:#f97316;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">实时 Token 用量显示</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">实时费用估算</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">上下文自动压缩机制</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">团队/项目预算硬限制</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">异常用量告警</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">按用户/项目分账报告</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Singularity platform provides usage dashboards showing endpoint counts, license utilization, and threat activity metrics. Admin console shows real-time agent status and coverage metrics. Per-site and per-group reporting available. Abnormal activity detection includes alerting on unusual threat patterns. Licensing model is per-endpoint with tiered packaging. Enterprise reporting includes executive dashboards and CSV/PDF exports.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No real-time token/credit usage display (not a token-based AI service)</div><div>• No real-time cost estimation dashboard</div><div>• No automatic context compression mechanism (not applicable)</div><div>• No team/project budget hard limits</div><div>• No per-user chargeback/billing allocation reports</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">📜</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D9: 合规与法规对齐</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估工具与主要数据保护法规（GDPR/PIPL/SOC2）的对齐程度。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.3</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 2%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:86%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">DPA 数据处理协议可签署</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">SOC 2 Type II 认证</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">数据主体删除权技术支持</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">数据存储地域可选(PIPL)</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">AI 内容标注/溯源能力</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">供应商安全事件通知流程</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Data Processing Addendum (DPA) is available for enterprise customers per the Master Subscription Agreement. SentinelOne holds SOC 2 Type II certification, ISO 27001, and other industry certifications. Privacy policy explicitly supports data subject rights (access, deletion, correction, transfer, restriction, objection). Standard contractual clauses used for international data transfers. Data retention policies documented. Security incident notification processes defined in MSA. Platform supports compliance requirements for Finance, Healthcare, Government, and other regulated industries. FedRAMP authorization for US Federal customers.</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Data storage region selection per-tenant not fully granular (AWS regions supported but customer choice limited)</div><div>• AI content labeling/provenance not explicitly documented for Purple AI outputs</div></div>
+      </div>
+    </div>
+
+  <h2>⛔ 一票否决检查</h2>
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">No critical security veto - SentinelOne is a mature enterprise EDR/XDR platform with strong security fundamentals</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">Data not sold to third parties per privacy policy</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">SOC 2 Type II certified with industry-standard compliance</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">End-to-end encryption (TLS 1.2+) for all data in transit</span>
+    </div>
+  </div>
+
+  <h2>⚠️ 风险清单</h2>
+  <div style="background:rgba(239,68,68,.12);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">HIGH</span>
+        <span style="font-size:13px;font-weight:700;">Cloud-native architecture with no on-premises deployment option</span>
+        <span style="font-size:10px;color:var(--text-muted);">D3</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">SentinelOne is fundamentally a cloud SaaS platform. All endpoint telemetry and threat data is transmitted to SentinelOne's cloud-hosted Management Console. Organizations with strict data sovereignty requirements (e.g., air-gapped networks, classified environments) cannot deploy the full platform locally. The agent does operate offline with autonomous protection, but data flows to cloud when connectivity is restored.</div>
+    </div><div style="background:rgba(239,68,68,.12);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">HIGH</span>
+        <span style="font-size:13px;font-weight:700;">Endpoint metadata and threat data used in ML model training</span>
+        <span style="font-size:10px;color:var(--text-muted);">D3</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">The privacy policy explicitly states that Threat Data (including malware, URLs, processes, techniques, metadata) is used in SentinelOne's proprietary machine learning engines. While limited personal information is stated as not being incorporated into the Solutions, the use of customer-derived threat data for ML training may conflict with strict data isolation requirements in regulated industries.</div>
+    </div><div style="background:rgba(245,158,11,.12);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">MEDIUM</span>
+        <span style="font-size:13px;font-weight:700;">Purple AI generative AI interface lacks documented prompt injection defenses</span>
+        <span style="font-size:10px;color:var(--text-muted);">D5</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">SentinelOne's Purple AI provides a generative AI interface for security analysts (natural language threat hunting). Specific prompt injection defenses, input sanitization, and output validation for this AI component are not publicly documented. An attacker who gains console access could potentially craft malicious queries, though RBAC limits this risk.</div>
+    </div><div style="background:rgba(245,158,11,.12);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">MEDIUM</span>
+        <span style="font-size:13px;font-weight:700;">Limited cost visibility and budget controls</span>
+        <span style="font-size:10px;color:var(--text-muted);">D8</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">As a per-endpoint licensed platform, cost scales with deployment size. The platform lacks granular per-user or per-department cost allocation dashboards. Organizations may face unexpected costs from agent sprawl across cloud workloads without proper governance. No hard budget limits or automatic cost controls are documented.</div>
+    </div><div style="background:rgba(16,185,129,.12);border-left:3px solid #10b981;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#10b981;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">LOW</span>
+        <span style="font-size:13px;font-weight:700;">Third-party integration security boundary not fully documented</span>
+        <span style="font-size:10px;color:var(--text-muted);">D6</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">Singularity Marketplace integrations with third-party tools (SIEM, SOAR, etc.) operate within the platform's security model, but the specific isolation mechanisms, data flow controls, and security boundaries for these integrations are not comprehensively documented in public materials.</div>
+    </div><div style="background:rgba(245,158,11,.12);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">MEDIUM</span>
+        <span style="font-size:13px;font-weight:700;">International data transfer reliance on standard contractual clauses</span>
+        <span style="font-size:10px;color:var(--text-muted);">D3</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">Privacy policy acknowledges that data is transferred to the US and other countries. Reliance on EU-approved standard contractual clauses (SCCs) for international transfers may face regulatory challenges under evolving data sovereignty frameworks (e.g., Schrems II implications, Chinese PIPL requirements).</div>
+    </div>
+
+  <h2>✅ 补偿控制建议</h2>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D3</div>
+      <div style="font-size:13px;color:var(--text-second);">For organizations with strict data sovereignty requirements, deploy SentinelOne agents in offline/air-gapped mode where autonomous protection operates without cloud connectivity. Implement network-level controls (proxies, firewalls) to restrict agent telemetry to approved endpoints only. Negotiate enhanced DPA terms specifying data residency within preferred AWS regions.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D5</div>
+      <div style="font-size:13px;color:var(--text-second);">When using Purple AI, implement compensating controls: restrict Purple AI access to senior analysts only via RBAC, enable full audit logging of all AI queries and responses, and establish security review processes for AI-generated threat hunting queries before execution in production environments.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D8</div>
+      <div style="font-size:13px;color:var(--text-second);">Implement internal governance for endpoint deployment tracking. Use the Management Console's site/group hierarchy to allocate endpoints by department. Establish monthly review of license utilization dashboards and set organizational limits on new agent deployments per business unit to control costs.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D3</div>
+      <div style="font-size:13px;color:var(--text-second);">For PIPL/GDPR compliance, leverage SentinelOne's DPA provisions and AWS regional hosting to negotiate data processing within specific regions. Implement data classification policies to ensure sensitive endpoint data is handled according to regional requirements. Consider network segmentation to minimize data cross-border flows.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D6</div>
+      <div style="font-size:13px;color:var(--text-second);">Review and approve all Singularity Marketplace integrations through a formal vendor risk assessment process. Limit integration capabilities to least-privilege API scopes. Monitor integration audit logs for anomalous data access patterns. Establish a quarterly review cycle for all active third-party integrations.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D1</div>
+      <div style="font-size:13px;color:var(--text-second);">Enforce MFA for all Management Console users. Integrate with enterprise IdP via SAML SSO for centralized identity governance. Implement conditional access policies and regular access reviews. Use API tokens with minimum required scopes and implement automated token rotation schedules.</div>
+    </div>
+  
+
+  <p style="margin-top:40px;font-size:11px;color:var(--text-muted);text-align:center;">
+    Generated by TrustLens · 2026年4月3日 · 基于 AI 分析官方文档自动生成，仅供内部决策参考
+  </p>
+</div>
+</body>
+</html>

@@ -1,0 +1,179 @@
+{
+  "toolName": "SentinelOne",
+  "category": "edr_xdr",
+  "tagline": "AI-powered autonomous endpoint security platform with Singularity XDR",
+  "dimScores": {
+    "D1": {
+      "score": 4.1,
+      "checks": [0.9, 0.8, 0.9, 1.0, 1.0, 0.8, 0.9, 0.9],
+      "evidence": "SentinelOne Singularity Console supports OAuth 2.0 for API authentication. MFA is fully supported and enforced for console access. Enterprise SSO via SAML 2.0 is documented and integrates with all major IdPs. API tokens support scope-limited permissions (Viewer, Analyst, Admin scopes). AD/LDAP integration available for centralized identity management. Bearer tokens transmitted over TLS 1.2+. Console Data includes 'authentication credentials' referenced in privacy policy as managed securely. Token auto-renewal supported via API token regeneration workflows.",
+      "missing": [
+        "No explicit documentation of PKCE flow for OAuth in public docs",
+        "Token auto-rotation period not publicly documented"
+      ]
+    },
+    "D2": {
+      "score": 4.2,
+      "checks": [1.0, 0.9, 0.8, 0.7, 0.9, 0.9, 0.8, 1.0],
+      "evidence": "SentinelOne implements granular RBAC with multiple pre-defined roles (Viewer, Analyst, IR, Admin, IT) plus custom roles -- a multi-level permission model well beyond binary allow/deny. Read-only console mode available for analysts. Agent operations can be scoped by site/group/site-level policies. RemoteOps includes execution timeout controls and command confirmation mechanisms. Sandbox (deep visibility) is default-on and actively monitors all processes. Policies are centrally managed and pushed from the Management Console to all agents across sites globally. Unknown/risky operations default to restrictive posture requiring Admin approval.",
+      "missing": [
+        "File operation scoping to specific directories not granularly documented in public materials",
+        "Explicit documentation of operation timeout values not publicly available"
+      ]
+    },
+    "D3": {
+      "score": 3.4,
+      "checks": [1.0, 0.8, 0.5, 0.7, 0.3, 0.3, 0.8, 0.7],
+      "evidence": "HTTPS proxy support documented for agent-to-console communication. Proxy settings propagate via agent configuration policies. Privacy policy confirms data is sent to US-based cloud (Singularity Management Console). Threat Data is used in proprietary ML engines but limited personal info is 'never incorporated into the Solutions, nor is it used to contact or market products.' Data Processing Addendum available for enterprise customers. International transfers use EU-approved standard contractual clauses. Singularity Data Lake provides some data residency control. AWS-hosted across regions worldwide.",
+      "missing": [
+        "No fully on-premises/local deployment option -- SentinelOne is fundamentally a cloud-native SaaS platform",
+        "No support for custom API endpoint/enterprise gateway for agent communication",
+        "Telemetry and analytics data collection is inherent to the platform's operation",
+        "CA certificate replacement for agent-to-cloud communication not explicitly documented"
+      ]
+    },
+    "D4": {
+      "score": 4.5,
+      "checks": [1.0, 1.0, 1.0, 0.9, 0.9, 1.0, 0.8, 0.9],
+      "evidence": "Every agent action, detection, and response is logged with full context (tool/process name, input parameters, timestamps). Singularity Data Lake provides persistent log storage with configurable retention. Deep Visibility feature captures full Storyline of all endpoint activity. AI SIEM integrates natively with Splunk, ELK, and other SIEM platforms via Singularity Marketplace integrations. Console audit trail tracks all user actions including configuration changes. Singularity RemoteOps Forensics provides comprehensive investigation and archiving capabilities. Log data protected by the same RBAC controls as the platform.",
+      "missing": [
+        "Explicit log tamper-protection cryptographic mechanism (e.g., blockchain hashing) not documented publicly",
+        "Log retention period configuration specifics not in public documentation"
+      ]
+    },
+    "D5": {
+      "score": 2.0,
+      "checks": [0.3, 0.3, 0.5, 0.3, 0.2, 0.2, 0.2, 0.2],
+      "evidence": "SentinelOne is not an AI coding assistant -- it is an EDR/XDR cybersecurity platform. Prompt injection in the traditional sense (manipulating an LLM coding agent) does not directly apply. However, SentinelOne has a 'Prompt Security' offering to secure AI tools across the enterprise, and Purple AI (Generative AI for SecOps) is their AI query interface. Purple AI likely has input sanitization but specific prompt injection defenses are not publicly documented. The platform itself is designed to detect malicious activity, including techniques that could resemble injection attacks on endpoints.",
+      "missing": [
+        "No documented prompt injection defense for Purple AI interface",
+        "No external file content length limits applicable (not a file-processing AI tool)",
+        "No PreToolUse hook mechanism (not an AI coding agent)",
+        "Injection test scenarios N/A to EDR platform"
+      ]
+    },
+    "D6": {
+      "score": 3.2,
+      "checks": [0.5, 0.7, 0.5, 0.5, 0.8, 0.8],
+      "evidence": "Singularity Marketplace provides one-click integrations with third-party tools (SIEM, SOAR, ticketing, etc.). These integrations are governed by the platform's RBAC model and centrally managed by admins. Administrators can enable/disable marketplace integrations. Integration configurations are managed at the console (management) level, not by individual endpoints. Third-party integrations run within the platform's security boundary. Singularity Hyperautomation provides automation with governance controls.",
+      "missing": [
+        "No MCP (Model Context Protocol) support -- not applicable to EDR",
+        "No documented process isolation for third-party integrations (sandboxed execution)",
+        "No OAuth for remote integration connections explicitly documented",
+        "No signed configuration protection for integrations publicly documented"
+      ]
+    },
+    "D7": {
+      "score": 4.0,
+      "checks": [0.9, 1.0, 0.8, 0.9, 0.7, 0.9],
+      "evidence": "Policies are centrally managed at the Management Console level and pushed to all agents. Admin-defined policies cannot be overridden by endpoint users. Site/group hierarchy supports policy inheritance (Global > Site > Group). Configuration changes tracked in audit logs with user attribution. Environment variable and registry-based configuration overrides available for agents. Management Console provides admin dashboard for centralized configuration governance across all endpoints.",
+      "missing": [
+        "Configuration version history / rollback feature not explicitly documented publicly",
+        "Deep merge semantics for policy inheritance not fully detailed in public docs"
+      ]
+    },
+    "D8": {
+      "score": 2.8,
+      "checks": [0.5, 0.5, 0.3, 0.5, 0.7, 0.7],
+      "evidence": "Singularity platform provides usage dashboards showing endpoint counts, license utilization, and threat activity metrics. Admin console shows real-time agent status and coverage metrics. Per-site and per-group reporting available. Abnormal activity detection includes alerting on unusual threat patterns. Licensing model is per-endpoint with tiered packaging. Enterprise reporting includes executive dashboards and CSV/PDF exports.",
+      "missing": [
+        "No real-time token/credit usage display (not a token-based AI service)",
+        "No real-time cost estimation dashboard",
+        "No automatic context compression mechanism (not applicable)",
+        "No team/project budget hard limits",
+        "No per-user chargeback/billing allocation reports"
+      ]
+    },
+    "D9": {
+      "score": 4.3,
+      "checks": [1.0, 1.0, 0.9, 0.7, 0.8, 0.9],
+      "evidence": "Data Processing Addendum (DPA) is available for enterprise customers per the Master Subscription Agreement. SentinelOne holds SOC 2 Type II certification, ISO 27001, and other industry certifications. Privacy policy explicitly supports data subject rights (access, deletion, correction, transfer, restriction, objection). Standard contractual clauses used for international data transfers. Data retention policies documented. Security incident notification processes defined in MSA. Platform supports compliance requirements for Finance, Healthcare, Government, and other regulated industries. FedRAMP authorization for US Federal customers.",
+      "missing": [
+        "Data storage region selection per-tenant not fully granular (AWS regions supported but customer choice limited)",
+        "AI content labeling/provenance not explicitly documented for Purple AI outputs"
+      ]
+    }
+  },
+  "risks": [
+    {
+      "severity": "high",
+      "title": "Cloud-native architecture with no on-premises deployment option",
+      "dim": "D3",
+      "desc": "SentinelOne is fundamentally a cloud SaaS platform. All endpoint telemetry and threat data is transmitted to SentinelOne's cloud-hosted Management Console. Organizations with strict data sovereignty requirements (e.g., air-gapped networks, classified environments) cannot deploy the full platform locally. The agent does operate offline with autonomous protection, but data flows to cloud when connectivity is restored."
+    },
+    {
+      "severity": "high",
+      "title": "Endpoint metadata and threat data used in ML model training",
+      "dim": "D3",
+      "desc": "The privacy policy explicitly states that Threat Data (including malware, URLs, processes, techniques, metadata) is used in SentinelOne's proprietary machine learning engines. While limited personal information is stated as not being incorporated into the Solutions, the use of customer-derived threat data for ML training may conflict with strict data isolation requirements in regulated industries."
+    },
+    {
+      "severity": "medium",
+      "title": "Purple AI generative AI interface lacks documented prompt injection defenses",
+      "dim": "D5",
+      "desc": "SentinelOne's Purple AI provides a generative AI interface for security analysts (natural language threat hunting). Specific prompt injection defenses, input sanitization, and output validation for this AI component are not publicly documented. An attacker who gains console access could potentially craft malicious queries, though RBAC limits this risk."
+    },
+    {
+      "severity": "medium",
+      "title": "Limited cost visibility and budget controls",
+      "dim": "D8",
+      "desc": "As a per-endpoint licensed platform, cost scales with deployment size. The platform lacks granular per-user or per-department cost allocation dashboards. Organizations may face unexpected costs from agent sprawl across cloud workloads without proper governance. No hard budget limits or automatic cost controls are documented."
+    },
+    {
+      "severity": "low",
+      "title": "Third-party integration security boundary not fully documented",
+      "dim": "D6",
+      "desc": "Singularity Marketplace integrations with third-party tools (SIEM, SOAR, etc.) operate within the platform's security model, but the specific isolation mechanisms, data flow controls, and security boundaries for these integrations are not comprehensively documented in public materials."
+    },
+    {
+      "severity": "medium",
+      "title": "International data transfer reliance on standard contractual clauses",
+      "dim": "D3",
+      "desc": "Privacy policy acknowledges that data is transferred to the US and other countries. Reliance on EU-approved standard contractual clauses (SCCs) for international transfers may face regulatory challenges under evolving data sovereignty frameworks (e.g., Schrems II implications, Chinese PIPL requirements)."
+    }
+  ],
+  "recs": [
+    {
+      "dim": "D3",
+      "text": "For organizations with strict data sovereignty requirements, deploy SentinelOne agents in offline/air-gapped mode where autonomous protection operates without cloud connectivity. Implement network-level controls (proxies, firewalls) to restrict agent telemetry to approved endpoints only. Negotiate enhanced DPA terms specifying data residency within preferred AWS regions."
+    },
+    {
+      "dim": "D5",
+      "text": "When using Purple AI, implement compensating controls: restrict Purple AI access to senior analysts only via RBAC, enable full audit logging of all AI queries and responses, and establish security review processes for AI-generated threat hunting queries before execution in production environments."
+    },
+    {
+      "dim": "D8",
+      "text": "Implement internal governance for endpoint deployment tracking. Use the Management Console's site/group hierarchy to allocate endpoints by department. Establish monthly review of license utilization dashboards and set organizational limits on new agent deployments per business unit to control costs."
+    },
+    {
+      "dim": "D3",
+      "text": "For PIPL/GDPR compliance, leverage SentinelOne's DPA provisions and AWS regional hosting to negotiate data processing within specific regions. Implement data classification policies to ensure sensitive endpoint data is handled according to regional requirements. Consider network segmentation to minimize data cross-border flows."
+    },
+    {
+      "dim": "D6",
+      "text": "Review and approve all Singularity Marketplace integrations through a formal vendor risk assessment process. Limit integration capabilities to least-privilege API scopes. Monitor integration audit logs for anomalous data access patterns. Establish a quarterly review cycle for all active third-party integrations."
+    },
+    {
+      "dim": "D1",
+      "text": "Enforce MFA for all Management Console users. Integrate with enterprise IdP via SAML SSO for centralized identity governance. Implement conditional access policies and regular access reviews. Use API tokens with minimum required scopes and implement automated token rotation schedules."
+    }
+  ],
+  "vetoChecks": [
+    {
+      "pass": true,
+      "label": "No critical security veto - SentinelOne is a mature enterprise EDR/XDR platform with strong security fundamentals"
+    },
+    {
+      "pass": true,
+      "label": "Data not sold to third parties per privacy policy"
+    },
+    {
+      "pass": true,
+      "label": "SOC 2 Type II certified with industry-standard compliance"
+    },
+    {
+      "pass": true,
+      "label": "End-to-end encryption (TLS 1.2+) for all data in transit"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+# TrustLens 工具分析列表
+# 开发者只需填写工具名称和官方文档 URL
+# CLI 会自动爬取文档并用 AI 进行九维度安全评估
+
+tools:
+  # ─── 传统安全工具 (Traditional Cybersecurity Tools) ──────────────
+
+  # 终端与检测响应 (EDR/XDR)
+  - name: "CrowdStrike Falcon"
+    category: edr_xdr
+    docs:
+      - https://www.crowdstrike.com/products/
+      - https://www.crowdstrike.com/privacy-notice/
+
+  - name: "SentinelOne"
+    category: edr_xdr
+    docs:
+      - https://www.sentinelone.com/platform/
+      - https://www.sentinelone.com/legal/privacy-policy/
+
+  # 身份与访问管理 (IAM)
+  - name: "Okta Workforce Identity"
+    category: iam
+    docs:
+      - https://developer.okta.com/
+      - https://www.okta.com/privacy-policy/
+
+  - name: "Microsoft Entra ID"
+    category: iam
+    docs:
+      - https://learn.microsoft.com/en-us/entra/identity/
+      - https://learn.microsoft.com/en-us/compliance/
+
+  # 云安全与网络防御
+  - name: "Zscaler Internet Access"
+    category: cloud_network
+    docs:
+      - https://help.zscaler.com/zia
+      - https://www.zscaler.com/privacy-statement
+
+  - name: "Fortinet FortiGate"
+    category: cloud_network
+    docs:
+      - https://docs.fortinet.com/document/fortigate/
+      - https://www.fortinet.com/corporate/about-us/privacy
+
+  # ─── AI Coding 工具 ──────────────────────────────────────────────
+
+  - name: "GitHub Copilot Enterprise"
+    category: ai_coding
+    docs:
+      - https://docs.github.com/en/copilot/overview-of-github-copilot/about-github-copilot-enterprise
+      - https://docs.github.com/en/site-policy/privacy-policies/github-copilot-business-privacy-statement
+
+  - name: "Cursor"
+    category: ai_coding
+    docs:
+      - https://docs.cursor.com/
+      - https://cursor.com/privacy
+
+  - name: "Windsurf (Codeium)"
+    category: ai_coding
+    docs:
+      - https://codeium.com/windsurf
+      - https://codeium.com/privacy_policy

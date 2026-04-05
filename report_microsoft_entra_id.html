@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Microsoft Entra ID — TrustLens 深度安全评估</title>
+  <style>/* ─── RESET & BASE ─────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-base:      #0a0d14;
+  --bg-card:      #111827;
+  --bg-card2:     #1a2233;
+  --bg-hover:     #1f2d42;
+  --border:       #1e2d45;
+  --border-light: #2a3f5f;
+  --text-primary: #f0f4ff;
+  --text-second:  #8899bb;
+  --text-muted:   #4a5a7a;
+  --accent:       #4f7fff;
+  --accent-glow:  rgba(79,127,255,.25);
+  --green:        #10b981;
+  --red:          #ef4444;
+  --amber:        #f59e0b;
+  --purple:       #8b5cf6;
+  --radius:       12px;
+  --radius-sm:    8px;
+  --shadow:       0 4px 24px rgba(0,0,0,.5);
+  --shadow-lg:    0 8px 48px rgba(0,0,0,.7);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ─── SCREENS ───────────────────────────────────────────────── */
+.screen { display: none; opacity: 0; }
+.screen.active { display: block; animation: screenFadeIn .4s ease forwards; }
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── NAV ───────────────────────────────────────────────────── */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(10,13,20,.85);
+  backdrop-filter: blur(12px);
+}
+.nav-logo { display: flex; align-items: center; gap: 10px; }
+.logo-icon { font-size: 22px; }
+.logo-text { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
+.logo-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  background: var(--accent); color: #fff;
+  padding: 2px 7px; border-radius: 99px;
+}
+.nav-links, .nav-actions { display: flex; align-items: center; gap: 16px; }
+.nav-link { color: var(--text-second); text-decoration: none; font-size: 14px; }
+.nav-link:hover { color: var(--text-primary); }
+
+/* ─── BUTTONS ───────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, #4f7fff, #7c3aed);
+  color: #fff; font-size: 14px; font-weight: 600;
+  padding: 10px 22px; border-radius: 8px; border: none;
+  cursor: pointer; transition: all .2s;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px var(--accent-glow); }
+.btn-primary.btn-large {
+  font-size: 16px; padding: 14px 32px; border-radius: 10px;
+  width: 100%; justify-content: center; margin-top: 8px;
+}
+.btn-ghost {
+  background: transparent; color: var(--text-second);
+  border: 1px solid var(--border-light); font-size: 14px; font-weight: 500;
+  padding: 9px 18px; border-radius: 8px; cursor: pointer; transition: all .2s;
+}
+.btn-ghost:hover { background: var(--bg-card2); color: var(--text-primary); }
+
+/* ─── HERO ───────────────────────────────────────────────────── */
+.hero {
+  max-width: 820px; margin: 0 auto;
+  padding: 80px 24px 60px;
+  text-align: center;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(79,127,255,.1); border: 1px solid rgba(79,127,255,.3);
+  color: #8eb4ff; font-size: 13px; font-weight: 500;
+  padding: 6px 14px; border-radius: 99px; margin-bottom: 28px;
+}
+.pulse-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #4f7fff;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .5; transform: scale(1.4); }
+}
+.hero-title {
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 800; line-height: 1.15;
+  letter-spacing: -.5px; margin-bottom: 20px;
+}
+.gradient-text {
+  background: linear-gradient(90deg, #4f7fff, #a78bfa, #f472b6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: 17px; color: var(--text-second);
+  line-height: 1.75; margin-bottom: 40px;
+}
+
+/* ─── EVAL CARD ─────────────────────────────────────────────── */
+.eval-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 36px 40px;
+  text-align: left;
+  box-shadow: var(--shadow-lg);
+}
+.eval-card-header { margin-bottom: 28px; }
+.eval-card-header h2 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+.eval-card-header p { font-size: 14px; color: var(--text-second); }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 8px; }
+.form-group.full { grid-column: 1 / -1; }
+.form-group label {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-second); letter-spacing: .3px;
+}
+.req { color: var(--red); }
+.form-group input, .form-group select {
+  background: var(--bg-card2); color: var(--text-primary);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 11px 14px; font-size: 14px; font-family: inherit;
+  transition: border-color .2s;
+  outline: none;
+}
+.form-group input:focus, .form-group select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.form-group select option { background: var(--bg-card2); }
+.demo-link { text-align: center; font-size: 13px; color: var(--text-muted); margin-top: 12px; }
+.demo-link a { color: var(--accent); text-decoration: none; }
+.demo-link a:hover { text-decoration: underline; }
+
+/* ─── MODE COMPARISON PANEL ──────────────────────────────────── */
+.mode-hint { margin-top: 16px; margin-bottom: 8px; }
+.mode-compare {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;
+}
+.mode-col {
+  text-align: center; padding: 14px 10px; border-radius: 10px;
+  background: var(--bg-card2); border: 1px solid var(--border);
+  transition: all .25s; cursor: default; opacity: .55;
+}
+.mode-col.active {
+  opacity: 1; border-color: var(--accent);
+  background: rgba(79,127,255,.06);
+  box-shadow: 0 0 16px rgba(79,127,255,.12);
+}
+.mc-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.mc-dims  { font-size: 12px; color: var(--text-second); margin-bottom: 3px; }
+.mc-conf  { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.mode-col.active .mc-conf { color: var(--green); }
+.mode-col:not(.active) .mc-conf { color: var(--text-muted); }
+.mc-method { font-size: 11px; color: var(--text-muted); }
+
+/* ─── DIMENSIONS PREVIEW ─────────────────────────────────────── */
+.dimensions-preview { max-width: 1100px; margin: 0 auto; padding: 0 24px 80px; }
+.section-title { font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 10px; }
+.section-sub { font-size: 15px; color: var(--text-second); text-align: center; margin-bottom: 40px; max-width: 600px; margin-left: auto; margin-right: auto; }
+.dim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media(max-width:768px){ .dim-grid { grid-template-columns: 1fr 1fr; } }
+.dim-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: all .25s; cursor: default;
+}
+.dim-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(79,127,255,.15);
+}
+.dim-icon { font-size: 28px; margin-bottom: 12px; }
+.dim-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.dim-weight { font-size: 12px; color: var(--text-muted); }
+
+/* ─── SCANNING ───────────────────────────────────────────────── */
+.scanning-wrapper {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh;
+  padding: 40px 24px; gap: 32px;
+}
+.scanning-orb { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; }
+.orb-ring {
+  position: absolute; border-radius: 50%;
+  border: 2px solid rgba(79,127,255,.3);
+  animation: orbSpin linear infinite;
+}
+.r1 { width: 100%; height: 100%; animation-duration: 4s; }
+.r2 { width: 75%; height: 75%; animation-duration: 3s; animation-direction: reverse; border-color: rgba(139,92,246,.4); }
+.r3 { width: 50%; height: 50%; animation-duration: 2s; border-color: rgba(244,63,94,.3); }
+@keyframes orbSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.orb-core { font-size: 40px; position: relative; z-index: 1; animation: float 3s ease-in-out infinite; }
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.scanning-title { font-size: 24px; font-weight: 700; }
+.scanning-progress-wrap {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; max-width: 440px;
+}
+.scanning-progress-bar {
+  flex: 1; height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden;
+}
+.scan-fill {
+  height: 100%; width: 0; border-radius: 99px;
+  background: linear-gradient(90deg, #4f7fff, #a78bfa);
+  transition: width .3s ease;
+}
+.scan-log {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--text-second);
+  text-align: center; min-height: 80px; max-width: 500px;
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+.log-entry { animation: fadeSlide .3s ease; }
+.log-ok { color: var(--green); }
+.log-warn { color: var(--amber); }
+.log-err { color: var(--red); }
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── RESULTS NAV ────────────────────────────────────────────── */
+.nav-results { position: sticky; top: 0; }
+
+/* ─── RESULTS HERO ───────────────────────────────────────────── */
+.results-hero {
+  max-width: 1200px; margin: 0 auto;
+  padding: 40px 32px 24px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  flex-wrap: wrap; gap: 24px;
+}
+.results-meta { flex: 1; min-width: 220px; }
+.meta-tool { font-size: 26px; font-weight: 800; display: flex; align-items: baseline; gap: 10px; }
+.tool-version { font-size: 14px; font-weight: 500; color: var(--text-second); }
+.meta-date { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+.score-display { display: flex; align-items: center; gap: 32px; }
+.score-ring-wrap { position: relative; width: 130px; height: 130px; }
+.score-ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 8; }
+.ring-fill {
+  fill: none; stroke: var(--accent); stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.5s cubic-bezier(.4,0,.2,1), stroke .5s;
+}
+.score-number-wrap {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: row; gap: 2px;
+}
+.score-number { font-size: 36px; font-weight: 800; }
+.score-max { font-size: 14px; color: var(--text-muted); align-self: flex-end; padding-bottom: 6px; }
+.score-info { display: flex; flex-direction: column; gap: 10px; }
+.grade-badge {
+  font-size: 22px; font-weight: 800;
+  padding: 6px 20px; border-radius: 8px;
+  text-align: center;
+}
+.grade-A-plus { background: rgba(16,185,129,.2); color: #10b981; border: 1px solid rgba(16,185,129,.4); }
+.grade-A      { background: rgba(79,127,255,.2); color: #6e9fff; border: 1px solid rgba(79,127,255,.4); }
+.grade-B      { background: rgba(245,158,11,.2); color: #f59e0b; border: 1px solid rgba(245,158,11,.4); }
+.grade-C      { background: rgba(239,68,68,.15); color: #ef4444; border: 1px solid rgba(239,68,68,.35); }
+.grade-D      { background: rgba(239,68,68,.25); color: #f87171; border: 1px solid rgba(239,68,68,.5); }
+.verdict-text { font-size: 14px; color: var(--text-primary); font-weight: 500; }
+.industry-gap { font-size: 12px; color: var(--text-second); }
+
+/* ─── VETO PANEL ─────────────────────────────────────────────── */
+.veto-panel {
+  max-width: 1200px; margin: 0 auto 20px;
+  padding: 0 32px;
+  display: flex; flex-wrap: wrap; gap: 10px;
+}
+.veto-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+}
+.veto-pass { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
+.veto-fail { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.4); color: #f87171; }
+
+/* ─── RESULTS GRID ───────────────────────────────────────────── */
+.results-grid {
+  max-width: 1200px; margin: 0 auto; padding: 0 32px 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+}
+@media(max-width:900px){ .results-grid { grid-template-columns: 1fr; } }
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+.card-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; }
+.card-radar { grid-row: 1 / 2; }
+.card-dims  { grid-row: 1 / 2; }
+.card-risks { grid-column: 1; }
+.card-recs  { grid-column: 2; }
+.radar-wrap { max-width: 300px; margin: 0 auto; }
+
+/* ─── DIM LIST ───────────────────────────────────────────────── */
+.dim-list { display: flex; flex-direction: column; gap: 10px; }
+.dim-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card2); cursor: pointer;
+  transition: background .15s;
+}
+.dim-row:hover { background: var(--bg-hover); }
+.dim-row-icon { font-size: 18px; width: 28px; text-align: center; flex-shrink: 0; }
+.dim-row-info { flex: 1; min-width: 0; }
+.dim-row-name { font-size: 13px; font-weight: 600; }
+.dim-row-weight { font-size: 11px; color: var(--text-muted); }
+.dim-row-bar-wrap { flex-shrink: 0; display: flex; align-items: center; gap: 8px; }
+.dim-bar { width: 80px; height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.dim-bar-fill { height: 100%; border-radius: 99px; transition: width 1s .5s; }
+.dim-score-txt { font-size: 13px; font-weight: 700; width: 28px; text-align: right; }
+
+/* ─── RISK / REC LIST ────────────────────────────────────────── */
+.risk-list, .rec-list { display: flex; flex-direction: column; gap: 14px; }
+.risk-item {
+  display: flex; gap: 12px;
+  padding: 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card2);
+}
+.risk-severity {
+  flex-shrink: 0; padding: 2px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 700;
+  align-self: flex-start; margin-top: 2px;
+}
+.sev-high   { background: rgba(239,68,68,.2);  color: #f87171; }
+.sev-medium { background: rgba(245,158,11,.2); color: #fbbf24; }
+.sev-low    { background: rgba(16,185,129,.15);color: #6ee7b7; }
+.risk-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.risk-desc  { font-size: 12px; color: var(--text-second); }
+.rec-item {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card2); border-left: 3px solid var(--accent);
+}
+.rec-dim { flex-shrink: 0; font-size: 11px; color: var(--text-muted); margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+.rec-text { font-size: 13px; color: var(--text-second); }
+
+/* ─── MODAL ──────────────────────────────────────────────────── */
+.modal { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; }
+.modal.hidden { display: none; }
+.modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); }
+.modal-box {
+  position: relative; z-index: 1;
+  background: var(--bg-card); border: 1px solid var(--border-light);
+  border-radius: 16px; box-shadow: var(--shadow-lg);
+  width: 90%; max-width: 660px; max-height: 85vh;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-report { max-width: 860px; }
+.modal-header {
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h2 { font-size: 18px; font-weight: 700; }
+.modal-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 18px; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: background .15s;
+}
+.modal-close:hover { background: var(--bg-card2); color: var(--text-primary); }
+.modal-body {
+  padding: 28px; overflow-y: auto; flex: 1;
+  display: flex; flex-direction: column; gap: 20px;
+}
+.report-actions { display: flex; align-items: center; gap: 10px; }
+
+/* ─── MODAL DETAIL ───────────────────────────────────────────── */
+.detail-intro { font-size: 14px; color: var(--text-second); }
+.detail-evidence {
+  background: var(--bg-card2); border-radius: var(--radius-sm);
+  padding: 16px;
+}
+.detail-evidence-title { font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: .8px; margin-bottom: 10px; }
+.evidence-code {
+  font-family: 'JetBrains Mono', monospace; font-size: 12px;
+  color: #a5d8ff; line-height: 1.6; white-space: pre;
+  overflow-x: auto;
+}
+.check-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.check-table th { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .6px; text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.check-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-second); }
+.check-table td:first-child { color: var(--text-primary); }
+.check-ok   { color: var(--green) !important; font-weight: 700; }
+.check-fail { color: var(--red)   !important; font-weight: 700; }
+.check-warn { color: var(--amber) !important; font-weight: 700; }
+
+/* ─── REPORT CONTENT ─────────────────────────────────────────── */
+.report-content { padding: 32px; overflow-y: auto; max-height: 70vh; font-size: 14px; line-height: 1.7; }
+.report-content h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+.report-content h2 { font-size: 16px; font-weight: 700; margin: 20px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.report-content h3 { font-size: 14px; font-weight: 700; margin: 14px 0 6px; color: var(--accent); }
+.report-content p { color: var(--text-second); margin-bottom: 8px; }
+.report-content table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.report-content th { font-size: 12px; text-align: left; padding: 8px 12px; background: var(--bg-card2); color: var(--text-muted); font-weight: 700; }
+.report-content td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-second); }
+.report-content ul { padding-left: 20px; color: var(--text-second); }
+.report-content li { margin-bottom: 4px; }
+.report-stamp { font-size: 11px; color: var(--text-muted); margin-top: 24px; font-style: italic; }
+
+/* ─── BENCHMARK PAGE ─────────────────────────────────────────── */
+.bench-section {
+  max-width: 1200px; margin: 0 auto; padding: 40px 32px 60px;
+}
+.bench-title {
+  font-size: 30px; font-weight: 800; text-align: center; margin-bottom: 8px;
+}
+.bench-sub {
+  font-size: 15px; color: var(--text-second); text-align: center;
+  margin-bottom: 32px; max-width: 600px; margin-left: auto; margin-right: auto;
+}
+.bench-industry-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 36px;
+}
+.bench-industry-bar label {
+  font-size: 13px; font-weight: 600; color: var(--text-second);
+}
+.bench-industry-bar select {
+  background: var(--bg-card2); color: var(--text-primary);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 8px 14px; font-size: 13px; font-family: inherit; outline: none;
+}
+.bench-industry-bar select:focus { border-color: var(--accent); }
+
+/* Tool Score Cards */
+.bench-cards {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin-bottom: 28px;
+}
+@media(max-width:900px) { .bench-cards { grid-template-columns: 1fr 1fr; } }
+.bench-tool-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px 20px;
+  text-align: center; cursor: pointer; transition: all .25s;
+  position: relative; overflow: hidden;
+}
+.bench-tool-card:hover {
+  border-color: var(--accent); transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(79,127,255,.15);
+}
+.bench-tool-card.best::after {
+  content: '🏆 最佳'; position: absolute; top: 10px; right: -24px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 3px 30px; transform: rotate(45deg);
+}
+.btc-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.btc-version { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
+.btc-score {
+  font-size: 36px; font-weight: 800; margin-bottom: 4px;
+}
+.btc-grade {
+  display: inline-block; font-size: 13px; font-weight: 700;
+  padding: 3px 14px; border-radius: 99px; margin-bottom: 8px;
+}
+.btc-tagline { font-size: 11px; color: var(--text-second); line-height: 1.4; }
+.btc-bar-wrap {
+  margin-top: 12px; height: 6px; background: var(--border);
+  border-radius: 99px; overflow: hidden; position: relative;
+}
+.btc-bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+.btc-threshold-mark {
+  position: absolute; top: -3px; width: 2px; height: 12px;
+  background: #fff; border-radius: 1px; opacity: .6;
+}
+
+/* Chart Card */
+.bench-chart-card { margin-bottom: 20px; }
+.bench-chart-wrap { max-height: 400px; }
+
+/* Compare Table */
+.bench-table-wrap { overflow-x: auto; }
+.bench-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
+.bench-table th {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-align: left; padding: 10px 14px;
+  border-bottom: 2px solid var(--border); letter-spacing: .4px;
+  position: sticky; top: 0; background: var(--bg-card);
+}
+.bench-table td {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  color: var(--text-second);
+}
+.bench-table td:first-child {
+  color: var(--text-primary); font-weight: 600; white-space: nowrap;
+}
+.bench-table tr:hover td { background: var(--bg-card2); }
+.bench-best-cell { color: var(--green) !important; font-weight: 700 !important; }
+.bench-worst-cell { color: var(--red) !important; }
+
+/* ─── STAGGER ANIMATIONS ─────────────────────────────────────── */
+.dim-row { animation: staggerIn .4s ease both; }
+.dim-row:nth-child(1)  { animation-delay: .05s; }
+.dim-row:nth-child(2)  { animation-delay: .1s; }
+.dim-row:nth-child(3)  { animation-delay: .15s; }
+.dim-row:nth-child(4)  { animation-delay: .2s; }
+.dim-row:nth-child(5)  { animation-delay: .25s; }
+.dim-row:nth-child(6)  { animation-delay: .3s; }
+.dim-row:nth-child(7)  { animation-delay: .35s; }
+.dim-row:nth-child(8)  { animation-delay: .4s; }
+.dim-row:nth-child(9)  { animation-delay: .45s; }
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.bench-tool-card { animation: cardPop .5s ease both; }
+.bench-tool-card:nth-child(1) { animation-delay: .05s; }
+.bench-tool-card:nth-child(2) { animation-delay: .15s; }
+.bench-tool-card:nth-child(3) { animation-delay: .25s; }
+.bench-tool-card:nth-child(4) { animation-delay: .35s; }
+@keyframes cardPop {
+  from { opacity: 0; transform: scale(.92) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Dim card hover upgrade */
+.dim-card { animation: cardPop .5s ease both; }
+.dim-card:nth-child(1) { animation-delay: .0s; }
+.dim-card:nth-child(2) { animation-delay: .06s; }
+.dim-card:nth-child(3) { animation-delay: .12s; }
+.dim-card:nth-child(4) { animation-delay: .18s; }
+.dim-card:nth-child(5) { animation-delay: .24s; }
+.dim-card:nth-child(6) { animation-delay: .3s; }
+.dim-card:nth-child(7) { animation-delay: .36s; }
+.dim-card:nth-child(8) { animation-delay: .42s; }
+.dim-card:nth-child(9) { animation-delay: .48s; }
+
+/* Veto items stagger */
+.veto-item { animation: staggerIn .3s ease both; }
+.veto-item:nth-child(2) { animation-delay: .05s; }
+.veto-item:nth-child(3) { animation-delay: .1s; }
+.veto-item:nth-child(4) { animation-delay: .15s; }
+.veto-item:nth-child(5) { animation-delay: .2s; }
+.veto-item:nth-child(6) { animation-delay: .25s; }
+
+/* ─── FRAMEWORK DOC MODAL ───────────────────────────────────── */
+.modal-doc { max-width: 780px; }
+.doc-url-section { margin-bottom: 20px; }
+.doc-label { font-size: 13px; font-weight: 700; color: var(--text-second); display: block; margin-bottom: 8px; }
+.doc-url-row { display: flex; gap: 10px; }
+.doc-url-row input {
+  flex: 1; background: var(--bg-card2); color: var(--text-primary);
+  border: 1px solid var(--border-light); border-radius: 8px;
+  padding: 10px 14px; font-size: 14px; font-family: inherit; outline: none;
+  transition: border-color .2s;
+}
+.doc-url-row input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.doc-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.doc-divider {
+  position: relative; text-align: center; margin: 28px 0;
+  border-top: 1px solid var(--border);
+}
+.doc-divider span {
+  position: relative; top: -10px;
+  background: var(--bg-card); padding: 0 16px;
+  font-size: 12px; color: var(--text-muted); font-weight: 600;
+}
+.doc-builtin h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.doc-builtin h4 { font-size: 14px; font-weight: 700; margin: 24px 0 10px; color: var(--accent); }
+.doc-intro { font-size: 13px; color: var(--text-second); margin-bottom: 16px; }
+.doc-dims-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+@media(max-width:600px) { .doc-dims-grid { grid-template-columns: 1fr 1fr; } }
+.doc-dim-card {
+  background: var(--bg-card2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 14px;
+  transition: border-color .2s;
+}
+.doc-dim-card:hover { border-color: var(--accent); }
+.doc-dim-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.doc-dim-icon { font-size: 18px; }
+.doc-dim-id { font-size: 11px; font-weight: 700; color: var(--accent); }
+.doc-dim-w { font-size: 10px; color: var(--text-muted); margin-left: auto; }
+.doc-dim-name { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.doc-dim-desc { font-size: 11px; color: var(--text-second); line-height: 1.5; margin-bottom: 6px;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.doc-dim-checks { font-size: 10px; color: var(--text-muted); }
+.doc-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.doc-table th { text-align: left; padding: 8px 12px; color: var(--text-muted); font-size: 11px; font-weight: 700; border-bottom: 1px solid var(--border); }
+.doc-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-second); }
+.doc-table td:first-child { font-weight: 800; font-size: 15px; }
+.grade-A-plus { color: #10b981; }
+.grade-A { color: #6e9fff; }
+.grade-B { color: #f59e0b; }
+.grade-C { color: #ef4444; }
+.grade-D { color: #f87171; }
+.doc-veto ul { padding-left: 20px; font-size: 13px; color: var(--text-second); }
+.doc-veto li { margin-bottom: 4px; }
+
+/* ─── BENCH TOOL SELECTOR ───────────────────────────────────── */
+.bench-tool-selector {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px; margin-bottom: 28px; flex-wrap: wrap;
+}
+.bench-tool-selector > label {
+  font-size: 13px; font-weight: 600; color: var(--text-second);
+}
+.bts-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.bts-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 99px; font-size: 13px; font-weight: 500;
+  background: var(--bg-card2); border: 1px solid var(--border);
+  color: var(--text-muted); cursor: pointer; transition: all .2s;
+  user-select: none; -webkit-user-select: none;
+}
+.bts-chip input { display: none; }
+.bts-chip.active {
+  background: rgba(79,127,255,.12); border-color: var(--accent);
+  color: var(--text-primary);
+}
+.bts-chip:hover { border-color: var(--accent); }
+
+/* ─── BENCH RADAR OVERLAY ───────────────────────────────────── */
+.bench-radar-wrap { max-width: 480px; margin: 0 auto; }
+
+/* ─── BENCH SUMMARY ─────────────────────────────────────────── */
+.bench-summary { margin-top: 28px; }
+.bench-summary-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; text-align: center; }
+.bench-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.bench-sw-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+  transition: border-color .2s;
+}
+.bench-sw-card:hover { border-color: var(--accent); }
+.bsw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.bsw-name { font-size: 15px; font-weight: 700; }
+.bsw-score { font-size: 24px; font-weight: 800; }
+.bsw-section { margin-bottom: 12px; }
+.bsw-label { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: .6px; margin-bottom: 8px; }
+.bsw-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.bsw-item:last-child { border-bottom: none; }
+.bsw-dim-icon { font-size: 16px; flex-shrink: 0; }
+.bsw-dim-name { font-size: 12px; color: var(--text-second); flex: 1; }
+.bsw-dim-score { font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+/* ─── PRINT STYLES ──────────────────────────────────────────── */
+@media print {
+  :root {
+    --bg-base: #fff; --bg-card: #fff; --bg-card2: #f8f9fa;
+    --bg-hover: #f0f0f0;
+    --border: #ddd; --border-light: #ccc;
+    --text-primary: #111; --text-second: #444; --text-muted: #888;
+  }
+  body { background: #fff; color: #111; font-size: 12px; }
+
+  .nav, .modal-close, .report-actions, .btn-primary, .btn-ghost { display: none !important; }
+  .modal-overlay { display: none !important; }
+  .modal { position: static !important; display: block !important; }
+  .modal.hidden { display: block !important; }
+  .modal-box {
+    position: static !important; width: 100% !important; max-width: 100% !important;
+    max-height: none !important; box-shadow: none !important; border: none !important;
+    border-radius: 0 !important;
+  }
+  .report-content { max-height: none !important; overflow: visible !important; padding: 0 !important; }
+
+  .report-content table { page-break-inside: avoid; }
+  .report-content th { background: #f0f0f0 !important; color: #333 !important; }
+  .report-content td { border-color: #ddd !important; color: #333 !important; }
+  .report-content h1 { color: #111 !important; }
+  .report-content h2 { color: #333 !important; border-color: #ccc !important; }
+  .report-content li, .report-content p { color: #333 !important; }
+  .report-stamp { color: #999 !important; }
+
+  h2 { page-break-after: avoid; }
+  table, .risk-item { page-break-inside: avoid; }
+
+  .screen, .screen.active { display: none !important; }
+  #report-modal { display: block !important; }
+  #report-modal .modal-header h2 { display: block; font-size: 10px; color: #999; margin-bottom: 8px; }
+}
+
+/* ─── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
+  .nav-links, .nav-actions { gap: 8px; }
+  .nav-link { font-size: 12px; }
+  .btn-ghost { font-size: 12px; padding: 7px 12px; }
+  .btn-primary { font-size: 12px; padding: 8px 14px; }
+
+  .hero { padding: 40px 16px 40px; }
+  .hero-title { font-size: 28px; }
+  .hero-sub { font-size: 14px; margin-bottom: 24px; }
+
+  .eval-card { padding: 24px 20px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .mode-compare { grid-template-columns: 1fr; }
+
+  .dimensions-preview { padding: 0 16px 40px; }
+  .section-title { font-size: 22px; }
+  .dim-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .results-hero { padding: 24px 16px 16px; flex-direction: column; align-items: stretch; }
+  .score-display { justify-content: center; }
+  .score-ring-wrap { width: 100px; height: 100px; }
+  .score-number { font-size: 28px; }
+  .results-grid { grid-template-columns: 1fr; padding: 0 16px 40px; }
+  .card-risks, .card-recs { grid-column: 1; }
+  .veto-panel { padding: 0 16px; }
+
+  .bench-section { padding: 24px 16px 40px; }
+  .bench-title { font-size: 22px; }
+  .bench-cards { grid-template-columns: 1fr 1fr !important; }
+  .bench-tool-selector { flex-direction: column; }
+  .btc-score { font-size: 28px; }
+
+  .modal-box { width: 95%; max-height: 90vh; }
+  .modal-header { padding: 16px 20px; }
+  .modal-body { padding: 20px; }
+  .doc-dims-grid { grid-template-columns: 1fr 1fr; }
+  .report-content { padding: 20px !important; }
+}
+
+@media (max-width: 480px) {
+  .hero-title { font-size: 24px; }
+  .dim-grid { grid-template-columns: 1fr; }
+  .bench-cards { grid-template-columns: 1fr !important; }
+  .doc-dims-grid { grid-template-columns: 1fr; }
+  .bench-summary-grid { grid-template-columns: 1fr; }
+  .score-display { flex-direction: column; align-items: center; }
+  .nav-links { display: none; }
+  .meta-tool { font-size: 20px; }
+}
+
+  .report-page{max-width:960px;margin:0 auto;padding:40px 32px 60px}
+  h2{font-size:20px;font-weight:700;margin:32px 0 16px;border-bottom:1px solid var(--border);padding-bottom:8px}
+  h3{font-size:16px;font-weight:700;margin:16px 0 8px;color:var(--accent)}
+  .hero{text-align:center;margin-bottom:36px}
+  .hero h1{font-size:28px;font-weight:800;margin-bottom:4px}
+  .hero-sub{color:var(--text-muted);font-size:13px}
+  .score-circle{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:120px;height:120px;border-radius:50%;border:4px solid #10b981;margin:20px auto}
+  .score-circle .num{font-size:40px;font-weight:900;color:#10b981;line-height:1}
+  .score-circle .grade{font-size:16px;font-weight:700;color:#10b981}
+  .radar-wrap{display:flex;justify-content:center;margin:20px 0}
+  </style>
+</head>
+<body>
+<div class="report-page">
+  <div class="hero">
+    <h1>Microsoft Entra ID</h1>
+    <div class="hero-sub">Microsoft's cloud identity and access management service providing MFA, Conditional Access, RBAC, and governance for enterprise environments · 2026年4月3日 · 互联网/科技70分基准</div>
+    <div class="score-circle">
+      <div class="num">86</div>
+      <div class="grade">A</div>
+    </div>
+    <div style="font-size:14px;color:#10b981">✅ 可引入，需监控特定风险</div>
+    <div style="color:#10b981;font-size:12px;margin-top:4px">✅ 达标行业基准</div>
+  </div>
+
+  <div style="grid-column:1/-1;background:var(--bg-card);border:1px solid var(--border-light);border-radius:var(--radius);padding:20px;margin-bottom:16px"><div style="font-size:14px;font-weight:700;color:var(--accent);margin-bottom:8px">📋 执行摘要</div><div style="font-size:14px;color:var(--text-second);line-height:1.8">Entra ID 凭借 13+ MFA 方式、Conditional Access 和 PIM 特权管理，在身份安全（D1: 4.8）和治理（D7: 4.7）方面达到顶尖水平。与 Microsoft 生态深度整合是其核心优势。适合已投入 Microsoft 生态的企业作为核心 IAM。</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px"><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:#10b981;margin-bottom:10px">💪 核心优势（Top 3 维度）</div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="font-size:16px">🔐</span><span style="flex:1;font-size:13px;color:var(--text-second)">D1 身份认证与访问控制</span><span style="font-size:14px;font-weight:800;color:#10b981">5.0</span><div style="width:60px;height:6px;background:rgba(16,185,129,.15);border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#10b981;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="font-size:16px">🛡️</span><span style="flex:1;font-size:13px;color:var(--text-second)">D2 权限最小化与操作授权</span><span style="font-size:14px;font-weight:800;color:#10b981">5.0</span><div style="width:60px;height:6px;background:rgba(16,185,129,.15);border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#10b981;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(16,185,129,.15)"><span style="font-size:16px">🌐</span><span style="flex:1;font-size:13px;color:var(--text-second)">D3 数据流向与主权控制</span><span style="font-size:14px;font-weight:800;color:#10b981">5.0</span><div style="width:60px;height:6px;background:rgba(16,185,129,.15);border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#10b981;border-radius:3px"></div></div></div></div><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:10px">⚠️ 主要短板（Bottom 3 维度）</div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px">🧠</span><span style="flex:1;font-size:13px;color:var(--text-second)">D5 Prompt Injection 防御</span><span style="font-size:14px;font-weight:800;color:#f59e0b">3.5</span><div style="width:60px;height:6px;background:rgba(239,68,68,.1);border-radius:3px;overflow:hidden"><div style="width:70%;height:100%;background:#f59e0b;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px">📜</span><span style="flex:1;font-size:13px;color:var(--text-second)">D9 合规与法规对齐</span><span style="font-size:14px;font-weight:800;color:#f59e0b">5.0</span><div style="width:60px;height:6px;background:rgba(239,68,68,.1);border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#f59e0b;border-radius:3px"></div></div></div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(239,68,68,.1)"><span style="font-size:16px">💰</span><span style="flex:1;font-size:13px;color:var(--text-second)">D8 成本控制与使用监控</span><span style="font-size:14px;font-weight:800;color:#f59e0b">5.0</span><div style="width:60px;height:6px;background:rgba(239,68,68,.1);border-radius:3px;overflow:hidden"><div style="width:100%;height:100%;background:#f59e0b;border-radius:3px"></div></div></div></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px"><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:#ef4444;margin-bottom:10px">🚨 关键风险</div><div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">🔴 Privileged Identity Management requires P2 licensing</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">PIM, Access Reviews, and Identity Protection are only available with Entra ID P2 licenses. Organizations on Free or P1 t</div></div><div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">🟡 Conditional Access policy misconfiguration risk</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Complex Conditional Access policies with multiple conditions and overlapping assignments can produce unintended access o</div></div><div style="padding:8px 0;border-bottom:1px solid var(--border)"><div style="font-size:12px;font-weight:600;color:var(--text-primary)">🟡 Third-party application consent exposure</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">The OAuth consent framework allows users to grant permissions to third-party applications. Without strict admin consent </div></div></div><div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px"><div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px">🎯 提升建议</div><div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-size:11px;margin-top:2px">▶</span><span style="font-size:12px;color:var(--text-second);line-height:1.5"><strong>D1:</strong> Deploy FIDO2 passkeys and Windows Hello for Business to eliminate password-based attack vectors. Blo</span></div><div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-size:11px;margin-top:2px">▶</span><span style="font-size:12px;color:var(--text-second);line-height:1.5"><strong>D2:</strong> Implement Privileged Identity Management (PIM) for all admin roles with maximum activation durations</span></div><div style="display:flex;align-items:flex-start;gap:6px;padding:6px 0;border-bottom:1px solid var(--border)"><span style="color:var(--accent);font-size:11px;margin-top:2px">▶</span><span style="font-size:12px;color:var(--text-second);line-height:1.5"><strong>D3:</strong> Configure diagnostic settings to export all Entra ID logs (audit, sign-in, provisioning) to a Log An</span></div></div></div>
+  <h2>📊 九维度雷达图</h2>
+  <div class="radar-wrap"><svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+    <path d="M160.0,135.7 L175.6,141.4 L184.0,155.8 L181.1,172.2 L168.3,182.9 L151.7,182.9 L138.9,172.2 L136.0,155.8 L144.4,141.4Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,111.4 L191.3,122.7 L207.9,151.6 L202.1,184.3 L176.6,205.7 L143.4,205.7 L117.9,184.3 L112.1,151.6 L128.7,122.7Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,87.0 L206.9,104.1 L231.9,147.3 L223.2,196.5 L185.0,228.6 L135.0,228.6 L96.8,196.5 L88.1,147.3 L113.1,104.1Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,62.7 L222.5,85.5 L255.8,143.1 L244.2,208.6 L193.3,251.4 L126.7,251.4 L75.8,208.6 L64.2,143.1 L97.5,85.5Z" fill="none" stroke="#1e2d45" stroke-width="1"/><path d="M160.0,38.4 L238.2,66.8 L279.8,138.9 L265.3,220.8 L201.6,274.3 L118.4,274.3 L54.7,220.8 L40.2,138.9 L81.8,66.8Z" fill="none" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="160.0" y2="38.4" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="238.2" y2="66.8" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="279.8" y2="138.9" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="265.3" y2="220.8" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="201.6" y2="274.3" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="118.4" y2="274.3" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="54.7" y2="220.8" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="40.2" y2="138.9" stroke="#1e2d45" stroke-width="1"/><line x1="160" y1="160" x2="81.8" y2="66.8" stroke="#1e2d45" stroke-width="1"/>
+    <path d="M160.0,43.3 L231.9,74.3 L263.0,141.8 L256.9,215.9 L189.1,240.0 L130.9,240.0 L61.0,217.2 L78.6,145.6 L88.1,74.3Z" fill="rgba(79,127,255,.2)" stroke="#4f7fff" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="160.0" cy="43.3" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="231.9" cy="74.3" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="263.0" cy="141.8" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="256.9" cy="215.9" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="189.1" cy="240.0" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="130.9" cy="240.0" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="61.0" cy="217.2" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="78.6" cy="145.6" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><circle cx="88.1" cy="74.3" r="4" fill="#4f7fff" stroke="#fff" stroke-width="1.5"/><text x="160.0" y="15.4" text-anchor="middle" fill="#8899bb" font-size="11" font-weight="600">D1</text><text x="249.1" y="53.8" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D2</text><text x="296.5" y="135.9" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D3</text><text x="280.1" y="229.3" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D4</text><text x="207.4" y="304.3" text-anchor="start" fill="#8899bb" font-size="11" font-weight="600">D5</text><text x="112.6" y="290.3" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D6</text><text x="39.9" y="229.3" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D7</text><text x="23.5" y="135.9" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D8</text><text x="70.9" y="53.8" text-anchor="end" fill="#8899bb" font-size="11" font-weight="600">D9</text>
+  </svg></div>
+
+  <h2>🔍 维度详细分析</h2>
+  
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🔐</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D1: 身份认证与访问控制</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具的身份认证强度，包括支持的认证协议、多因素认证、Token 管理等。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.8</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 15%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:96%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 OAuth 2.0 / PKCE</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">Token 自动续期机制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">认证凭证无明文本地存储</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 MFA</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持企业 SSO / SAML</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 API Key 权限范围限制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">100%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持集中式身份管理(AD)</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">Bearer Token 传输安全</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Microsoft Entra ID provides comprehensive authentication including OAuth2/OIDC token-based auth, 13+ MFA verification methods (Microsoft Authenticator, FIDO2 passkeys, Windows Hello for Business, certificate-based auth, hardware tokens, SMS, voice), Conditional Access policies enforcing context-aware access decisions based on user risk, sign-in risk, device state, location, and client app type. Supports passwordless authentication via FIDO2 keys and Windows Hello. Legacy authentication protocols can be blocked via Conditional Access. Security defaults enable MFA for all users out-of-the-box. Authentication methods policy provides centralized management with migration from legacy MFA/SSPR policies. Identity Protection detects and remediates identity-based risks with real-time sign-in risk evaluation. Sources: learn.microsoft.com/en-us/entra/identity/authentication/concept-mfa-howitworks, learn.microsoft.com/en-us/entra/identity/conditional-access/, learn.microsoft.com/en-us/azure/active-directory/conditional-access/concept-conditional-access-conditions</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Native FIDO2 passkey support requires Entra ID P1/P2 for Conditional Access integration</div><div>• Some legacy protocol support (Exchange ActiveSync) limits MFA enforcement in edge cases</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🛡️</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D2: 权限最小化与操作授权</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具对文件系统、命令执行等高危操作的权限控制精度。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.6</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 20%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:92%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">多级权限模型（非仅允许/拒绝）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持禁用命令执行（ReadOnly模式）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">文件操作范围可限制到目录</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">未知操作默认最高权限要求</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">危险操作有二次确认机制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">沙箱默认开启且不易关闭</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">操作有执行时间超时控制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">权限配置可集中推送给所有用户</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Entra ID provides robust least-privilege enforcement through: (1) Microsoft Entra RBAC with built-in roles, custom roles, and least-privileged roles by task; (2) Privileged Identity Management (PIM) enabling just-in-time privileged access with time-bound role activation, approval workflows, and multi-factor activation requirements; (3) Administrative Units for scoping role assignments to subsets of users/groups; (4) Role-assignable groups for delegated role management; (5) Access Reviews for periodic recertification of role memberships and access assignments; (6) Entitlement Management for governing access packages with built-in approval workflows. PIM limits standing admin access, requires justification for activation, and provides full audit trail. Sources: learn.microsoft.com/en-us/entra/identity/role-based-access-control/, learn.microsoft.com/en-us/entra/id-governance/privileged-identity-management, learn.microsoft.com/en-us/entra/id-governance/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• PIM requires Entra ID P2 license for full functionality</div><div>• Some granular custom role permissions may require careful design to avoid over-provisioning</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🌐</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D3: 数据流向与主权控制</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估代码数据发送到哪里、是否可以通过企业安全网关拦截、是否支持私有化部署。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.3</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 18%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:86%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持 HTTPS 企业代理</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">代理设置传播到子进程（bash等）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持自定义 API 端点（企业网关）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持企业 CA 证书替换</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">无后台遥测/分析数据</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持私有化本地部署</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">数据不用于模型训练</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">代码数据边界文档明确</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">80%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Entra ID provides extensive visibility into data flows through: (1) Sign-in logs capturing all authentication events with detailed risk, location, device, and client app information; (2) Audit logs tracking all directory changes (users, groups, apps, licenses, role assignments) with immutable entries; (3) Provisioning logs for identity synchronization activities across connected systems (Workday, ServiceNow, etc.); (4) Microsoft Graph activity logs (P1/P2); (5) Diagnostic settings for exporting logs to Log Analytics, Event Hubs, or Storage accounts; (6) Cross-tenant access settings for controlling B2B collaboration data flows; (7) Hybrid identity support via Azure AD Connect for on-premises synchronization. Sources: learn.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-audit-logs, learn.microsoft.com/en-us/entra/identity/, learn.microsoft.com/en-us/entra/external-id/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Full data flow visualization across multi-cloud environments requires integration with Microsoft Sentinel</div><div>• Provisioning logs require P1/P2 license</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">📋</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D4: 审计日志与可追溯性</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具的操作记录完整性，包括工具调用日志、会话持久化和 SIEM 集成能力。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.6</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 15%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:92%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">每次工具调用有日志记录</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志含工具名称与输入参数</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志含时间戳</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志自动持久化（不依赖用户）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">会话可完整导出/存档</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">SIEM 集成（Splunk/ELK）</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志防篡改机制</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">日志保留期可配置</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">85%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Entra ID provides comprehensive audit capabilities: (1) Audit logs are immutable, system-generated, and cannot be changed or deleted; (2) Logs capture all directory-level activities including user/group/app changes, role assignments, license modifications; (3) Custom security attribute audit logs with dedicated Attribute Log Administrator/Reader roles; (4) Sign-in logs with risk detection, Conditional Access evaluation details, and authentication method tracking; (5) Role-based access to logs (Reports Reader, Security Reader, Security Administrator, Global Reader); (6) Integration with Log Analytics, Event Hubs, and SIEM solutions for long-term retention and analysis; (7) Identity Protection risk investigation with simulation capabilities; (8) Lifecycle Workflows for auditable joiner-mover-leaver processes. Sources: learn.microsoft.com/en-us/azure/active-directory/reports-monitoring/concept-audit-logs, learn.microsoft.com/en-us/entra/id-protection/, learn.microsoft.com/en-us/entra/id-governance/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Advanced analytics and threat hunting require integration with Microsoft Sentinel</div><div>• Long-term log retention beyond 30 days requires diagnostic settings configuration</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🧠</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D5: Prompt Injection 防御</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具对外部内容中嵌入恶意指令的抵御能力。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f59e0b;">3.5</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 12%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:70%;height:100%;background:#f59e0b;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">系统提示含注入防御指令</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">外部文件内容有长度上限</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">20%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">用户配置无法覆盖安全指令</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">30%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">AI 会主动警告可疑注入</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">PreToolUse 钩子可拦截</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">40%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">注入测试场景1通过（文件内容）</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">60%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f97316;font-size:14px;width:18px;text-align:center;">○</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">注入测试场景2通过（角色扮演）</span>
+        <span style="font-size:11px;color:#f97316;font-weight:600;">40%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">注入测试场景3通过（间接URL）</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">50%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Microsoft Entra ID is not an AI/LLM tool and does not process natural language prompts in a way susceptible to prompt injection. The prompt injection dimension is largely not applicable to Entra ID as an IAM service. However, some considerations exist: (1) Conditional Access optimization agent (preview) uses AI for policy recommendations but operates on structured policy data, not free-text prompts; (2) Authentication methods and policies are defined through structured admin interfaces, not natural language; (3) User-facing interactions (sign-in, MFA challenges) use fixed UI patterns not susceptible to injection; (4) Microsoft Graph API calls use structured query parameters. The score reflects that while Entra ID itself has minimal prompt injection surface, it increasingly incorporates AI features (optimization agent) that warrant monitoring. Sources: learn.microsoft.com/en-us/entra/identity/conditional-access/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No LLM prompt handling surface to defend against</div><div>• AI-powered Conditional Access optimization agent needs prompt injection review as it matures</div><div>• No input sanitization frameworks needed for traditional IAM operations</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">🔌</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D6: 第三方扩展（MCP/插件）安全</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 AI 工具的插件/扩展生态系统安全机制，防止供应链攻击。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f59e0b;">3.5</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 8%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:70%;height:100%;background:#f59e0b;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 在独立进程中运行</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 白名单/黑名单机制</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">75%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 配置有签名保护</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">远程 MCP 支持 OAuth</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">MCP 受主权限模型约束</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">管理员可禁止用户添加 MCP</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Entra ID integrates with a broad plugin/extension ecosystem: (1) Enterprise applications via SAML/OIDC federation with thousands of pre-integrated apps in the Azure AD app gallery; (2) API connectors for custom authentication extensions; (3) External authentication methods (preview) allowing third-party MFA providers; (4) NPS extension for integrating with on-premises RADIUS infrastructure; (5) Application Proxy for secure remote access to on-premises web applications; (6) Microsoft Graph API for programmatic management. Plugin security is enforced through app registration/consent frameworks, permission scopes (delegated vs application), Conditional Access policies applying to all integrated apps, and admin consent workflows for high-privilege permissions. Sources: learn.microsoft.com/en-us/entra/identity/authentication/concept-authentication-methods-manage, learn.microsoft.com/en-us/entra/identity/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Third-party app consent model can be exploited if admin consent is too permissive</div><div>• External authentication methods are in preview and lack maturity documentation</div><div>• Granular plugin permission auditing requires additional tooling</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">⚙️</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D7: 配置治理与集中管控</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估企业管理员能否集中推送配置，防止用户绕过安全策略。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.7</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 6%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:94%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持项目级统一配置</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">管理员策略不可被用户覆盖</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">配置支持继承与深度合并</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">有管理后台推送配置</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">配置变更有版本历史</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">支持环境变量强制覆盖</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Entra ID excels at configuration governance through: (1) Conditional Access policies with granular conditions (user risk, sign-in risk, device platform, location, client apps, device filters) providing fine-grained access control; (2) Named locations for geo-fencing access; (3) Authentication Strengths for requiring specific MFA methods per scenario; (4) Security defaults as baseline protection for all tenants; (5) What If tool for testing policy impact before deployment; (6) Conditional Access optimization agent for policy recommendations; (7) Device compliance integration with Microsoft Intune for requiring managed/compliant devices; (8) Configuration drift prevention through policy-only management model. Intune integration enables device-level governance. Policies are versioned and changes are fully audited. Sources: learn.microsoft.com/en-us/entra/identity/conditional-access/, learn.microsoft.com/en-us/azure/active-directory/conditional-access/concept-conditional-access-conditions</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Conditional Access policy templates could benefit from more industry-specific presets</div><div>• Policy conflict detection across multiple Conditional Access policies requires manual review or What If tool</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">💰</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D8: 成本控制与使用监控</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估 Token 用量可见性、预算控制和费用异常告警能力。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#f59e0b;">3.4</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 4%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:68%;height:100%;background:#f59e0b;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">实时 Token 用量显示</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">实时费用估算</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">65%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">上下文自动压缩机制</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">团队/项目预算硬限制</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">65%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">异常用量告警</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">65%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#f59e0b;font-size:14px;width:18px;text-align:center;">◐</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">按用户/项目分账报告</span>
+        <span style="font-size:11px;color:#f59e0b;font-weight:600;">70%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Entra ID cost management is licensing-tier dependent: (1) Free tier includes basic IAM, security defaults, and audit logs; (2) Entra ID P1 adds Conditional Access, dynamic groups, self-service password reset, and hybrid identity; (3) Entra ID P2 adds PIM, Identity Protection, Access Reviews, and Entitlement Management; (4) External ID has separate billing model for B2B/CIAM scenarios with monthly active user (MAU) pricing; (5) Authentication method licensing varies (FIDO2, certificate-based auth available in all tiers); (6) Cost allocation can be managed through Azure Cost Management for Entra ID governance features. The tiered model means advanced security features (PIM, Identity Protection, Access Reviews) require premium licensing, which can be expensive at scale. Sources: learn.microsoft.com/en-us/entra/external-id/, learn.microsoft.com/en-us/entra/id-governance/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• No built-in spending alerts specific to Entra ID usage</div><div>• P2 features critical for security (PIM, Identity Protection) create significant cost pressure</div><div>• External ID MAU billing lacks real-time cost visibility</div></div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <span style="font-size:20px;">📜</span>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;">D9: 合规与法规对齐</div>
+          <div style="font-size:11px;color:var(--text-muted);">评估工具与主要数据保护法规（GDPR/PIPL/SOC2）的对齐程度。</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:24px;font-weight:800;color:#10b981;">4.6</div>
+          <div style="font-size:10px;color:var(--text-muted);">/5.0 · 权重 2%</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-base);border-radius:6px;height:8px;overflow:hidden;margin-bottom:14px;">
+        <div style="width:92%;height:100%;background:#10b981;border-radius:6px;transition:width .5s;"></div>
+      </div>
+      <div style="margin-bottom:14px;"><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">DPA 数据处理协议可签署</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">SOC 2 Type II 认证</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">95%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">数据主体删除权技术支持</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">数据存储地域可选(PIPL)</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">AI 内容标注/溯源能力</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div><div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:#10b981;font-size:14px;width:18px;text-align:center;">●</span>
+        <span style="flex:1;font-size:12px;color:var(--text-second)">供应商安全事件通知流程</span>
+        <span style="font-size:11px;color:#10b981;font-weight:600;">90%</span>
+      </div></div>
+      <div style="background:var(--bg-card2);border-radius:6px;padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:6px;">📋 文档证据</div>
+        <div style="font-size:12px;color:var(--text-second);line-height:1.7;">Microsoft Entra ID has extensive compliance coverage: (1) Microsoft Purview Compliance Manager provides 360+ regulatory templates for compliance assessments; (2) Compliance score tracks progress against ISO 27001, SOC 2, NIST, GDPR, HIPAA, FedRAMP, and many other frameworks; (3) Microsoft compliance offerings span national, regional, and industry-specific requirements; (4) Service assurance provides expertly curated compliance resources and documentation for risk assessments; (5) Immutable audit logs support compliance evidence collection; (6) Microsoft Cloud for Industries supports sector-specific compliance needs; (7) Audit log access supports Reports Reader, Security Reader, Security Administrator, and Global Reader roles following least-privilege principles. Microsoft undergoes regular third-party audits including SOC 1/2/3, ISO 27001/27018/27017, and FedRAMP. Sources: learn.microsoft.com/en-us/purview/compliance-manager, learn.microsoft.com/en-us/compliance/</div>
+      </div>
+      <div style="background:rgba(239,68,68,.08);border-radius:6px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);margin-bottom:6px;">⚠️ 文档中未提及</div>
+        <div style="font-size:12px;color:var(--text-second);"><div>• Some regional compliance certifications may require additional Azure-level configurations</div><div>• Customer-managed compliance actions require ongoing manual effort through Compliance Manager</div></div>
+      </div>
+    </div>
+
+  <h2>⛔ 一票否决检查</h2>
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">Multi-factor authentication available and enforced via Conditional Access</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">Privileged Identity Management provides just-in-time admin access</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">Immutable audit logs with role-based access controls</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">Conditional Access enables context-aware policy enforcement</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">SOC 2, ISO 27001, and 360+ compliance framework certifications</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">RBAC with custom roles and administrative unit scoping</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>✅</span>
+      <span style="font-size:13px;color:var(--text-second);">Identity Protection detects and remediates compromised identities</span>
+    </div><div style="display:flex;align-items:center;gap:8px;padding:8px 0;">
+      <span>❌</span>
+      <span style="font-size:13px;color:var(--text-second);">No prompt injection surface (N/A for IAM service, but AI features emerging)</span>
+    </div>
+  </div>
+
+  <h2>⚠️ 风险清单</h2>
+  <div style="background:rgba(239,68,68,.12);border-left:3px solid #ef4444;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">HIGH</span>
+        <span style="font-size:13px;font-weight:700;">Privileged Identity Management requires P2 licensing</span>
+        <span style="font-size:10px;color:var(--text-muted);">D2</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">PIM, Access Reviews, and Identity Protection are only available with Entra ID P2 licenses. Organizations on Free or P1 tiers lack just-in-time privileged access controls, creating standing privilege risk.</div>
+    </div><div style="background:rgba(245,158,11,.12);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">MEDIUM</span>
+        <span style="font-size:13px;font-weight:700;">Conditional Access policy misconfiguration risk</span>
+        <span style="font-size:10px;color:var(--text-muted);">D7</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">Complex Conditional Access policies with multiple conditions and overlapping assignments can produce unintended access outcomes. While the What If tool helps, there is no automated policy conflict detection.</div>
+    </div><div style="background:rgba(245,158,11,.12);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">MEDIUM</span>
+        <span style="font-size:13px;font-weight:700;">Third-party application consent exposure</span>
+        <span style="font-size:10px;color:var(--text-muted);">D6</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">The OAuth consent framework allows users to grant permissions to third-party applications. Without strict admin consent policies, users may authorize malicious or over-privileged applications accessing directory data.</div>
+    </div><div style="background:rgba(245,158,11,.12);border-left:3px solid #f59e0b;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">MEDIUM</span>
+        <span style="font-size:13px;font-weight:700;">Legacy authentication protocol risk</span>
+        <span style="font-size:10px;color:var(--text-muted);">D1</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">While Conditional Access can block legacy authentication, Exchange ActiveSync and other legacy protocols do not support MFA. Organizations that still require legacy protocols face a security gap.</div>
+    </div><div style="background:rgba(16,185,129,.12);border-left:3px solid #10b981;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#10b981;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">LOW</span>
+        <span style="font-size:13px;font-weight:700;">AI optimization agent preview status</span>
+        <span style="font-size:10px;color:var(--text-muted);">D5</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">The Conditional Access optimization agent is in preview, and its AI-driven policy recommendations may evolve. Organizations should review agent suggestions before adoption to ensure alignment with security policies.</div>
+    </div><div style="background:rgba(16,185,129,.12);border-left:3px solid #10b981;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="background:#10b981;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;">LOW</span>
+        <span style="font-size:13px;font-weight:700;">Cost escalation with premium features</span>
+        <span style="font-size:10px;color:var(--text-muted);">D8</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-second);">Critical security features including PIM, Identity Protection, and advanced Conditional Access require P2 licensing. At enterprise scale, per-user P2 costs can become significant, potentially leading organizations to deprioritize security controls.</div>
+    </div>
+
+  <h2>✅ 补偿控制建议</h2>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D1</div>
+      <div style="font-size:13px;color:var(--text-second);">Deploy FIDO2 passkeys and Windows Hello for Business to eliminate password-based attack vectors. Block legacy authentication protocols organization-wide using Conditional Access policies.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D2</div>
+      <div style="font-size:13px;color:var(--text-second);">Implement Privileged Identity Management (PIM) for all admin roles with maximum activation durations of 4-8 hours, require MFA for activation, and enforce approval workflows for Global Administrator and Privileged Role Administrator.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D3</div>
+      <div style="font-size:13px;color:var(--text-second);">Configure diagnostic settings to export all Entra ID logs (audit, sign-in, provisioning) to a Log Analytics workspace with at least 1 year retention. Integrate with Microsoft Sentinel for cross-correlation and threat hunting.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D4</div>
+      <div style="font-size:13px;color:var(--text-second);">Enable Continuous Access Evaluation (CAE) for near-real-time token revocation. Configure alert rules for high-risk audit events such as role assignment changes, authentication method modifications, and Conditional Access policy updates.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D5</div>
+      <div style="font-size:13px;color:var(--text-second);">As Entra ID incorporates more AI features (optimization agent, Copilot integration), establish a review process for AI-generated policy recommendations before deployment. Monitor the AI feature roadmap for new prompt-handling surfaces.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D6</div>
+      <div style="font-size:13px;color:var(--text-second);">Configure admin consent policies to restrict user self-service app consent. Enable admin consent workflow for applications requesting high-privilege permissions. Regularly audit enterprise application consent grants and remove unused applications.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D7</div>
+      <div style="font-size:13px;color:var(--text-second);">Adopt Conditional Access templates for common security scenarios (require MFA for admins, block legacy auth, require compliant device). Use the What If tool to test all new policies before enabling them in report-only mode, then transition to enforce.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D8</div>
+      <div style="font-size:13px;color:var(--text-second);">Conduct a license optimization review to identify users who need P2 (admin roles, high-value targets) versus P1 (general Conditional Access). Use Entra ID Governance licensing fundamentals guide to optimize per-user costs.</div>
+    </div>
+  
+    <div style="background:rgba(79,127,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:10px;">
+      <div style="font-size:10px;color:var(--accent);font-weight:700;margin-bottom:4px;">D9</div>
+      <div style="font-size:13px;color:var(--text-second);">Use Microsoft Purview Compliance Manager to create assessments for ISO 27001, SOC 2, and industry-specific regulations applicable to your organization. Assign improvement actions to responsible teams and track compliance score progress.</div>
+    </div>
+  
+
+  <p style="margin-top:40px;font-size:11px;color:var(--text-muted);text-align:center;">
+    Generated by TrustLens · 2026年4月3日 · 基于 AI 分析官方文档自动生成，仅供内部决策参考
+  </p>
+</div>
+</body>
+</html>
